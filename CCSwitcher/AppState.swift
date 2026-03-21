@@ -10,6 +10,7 @@ final class AppState: ObservableObject {
 
     @Published var accounts: [Account] = []
     @Published var activeAccount: Account?
+    @Published var accountUsage: [UUID: UsageAPIResponse] = [:]
     @Published var usageSummary: UsageSummary = .empty
     @Published var recentActivity: [DailyActivity] = []
     @Published var activeSessions: [SessionInfo] = []
@@ -17,6 +18,7 @@ final class AppState: ObservableObject {
     @Published var isLoggingIn = false
     @Published var errorMessage: String?
     @Published var claudeAvailable = false
+    @Published var lastUsageRefresh: Date?
 
     // MARK: - Services
 
@@ -60,6 +62,10 @@ final class AppState: ObservableObject {
 
         // Passive token health check (no CLI calls, keychain reads only)
         diagnoseTokenHealth()
+
+        // Fetch usage limits for all accounts
+        await fetchAllAccountUsage()
+        lastUsageRefresh = Date()
 
         usageSummary = statsParser.getUsageSummary()
         recentActivity = statsParser.getRecentActivity(days: 7)
@@ -339,6 +345,29 @@ final class AppState: ObservableObject {
             errorMessage = error.localizedDescription
             isLoggingIn = false
             log.error("[reauth] Error: \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Usage
+
+    private func fetchAllAccountUsage() async {
+        // For active account: use live keychain token
+        // For other accounts: use backup token
+        for account in accounts {
+            let tokenJSON: String?
+            if account.isActive {
+                tokenJSON = keychain.readClaudeToken()
+            } else {
+                tokenJSON = keychain.getAccountBackup(forAccountId: account.id.uuidString)?.token
+            }
+            guard let tokenJSON, let accessToken = ClaudeService.extractAccessToken(from: tokenJSON) else {
+                log.warning("[fetchUsage] No token for \(account.email), skipping")
+                continue
+            }
+            if let usage = await claudeService.getUsageLimits(accessToken: accessToken) {
+                accountUsage[account.id] = usage
+                log.info("[fetchUsage] \(account.email): session=\(usage.fiveHour?.utilization ?? -1)%, weekly=\(usage.sevenDay?.utilization ?? -1)%")
+            }
         }
     }
 

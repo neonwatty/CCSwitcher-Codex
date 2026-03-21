@@ -95,19 +95,18 @@ struct MainMenuView: View {
     private var tabBar: some View {
         HStack(spacing: 0) {
             ForEach(Tab.allCases, id: \.self) { tab in
-                Button {
-                    withAnimation(.easeInOut(duration: 0.15)) {
-                        selectedTab = tab
+                Text(tab.rawValue)
+                    .font(.subheadline.weight(selectedTab == tab ? .semibold : .regular))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(selectedTab == tab ? Color.accentColor.opacity(0.1) : .clear)
+                    .foregroundStyle(selectedTab == tab ? .primary : .secondary)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            selectedTab = tab
+                        }
                     }
-                } label: {
-                    Text(tab.rawValue)
-                        .font(.subheadline.weight(selectedTab == tab ? .semibold : .regular))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .background(selectedTab == tab ? Color.accentColor.opacity(0.1) : .clear)
-                        .foregroundStyle(selectedTab == tab ? .primary : .secondary)
-                }
-                .buttonStyle(.plain)
             }
         }
     }

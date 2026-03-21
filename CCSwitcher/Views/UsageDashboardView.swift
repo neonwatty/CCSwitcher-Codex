@@ -1,153 +1,180 @@
 import SwiftUI
 
-/// Shows usage statistics: today, weekly, and a bar chart of recent activity.
+/// Shows real usage limits from Claude API, one card per account.
 struct UsageDashboardView: View {
     @EnvironmentObject private var appState: AppState
 
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
-                // Today's stats
-                statsSection(
-                    title: "Today",
-                    messages: appState.usageSummary.todayMessages,
-                    sessions: appState.usageSummary.todaySessionCount,
-                    toolCalls: appState.usageSummary.todayToolCalls
-                )
-
-                // Weekly stats
-                statsSection(
-                    title: "This Week",
-                    messages: appState.usageSummary.weeklyMessages,
-                    sessions: appState.usageSummary.weeklySessionCount,
-                    toolCalls: appState.usageSummary.weeklyToolCalls
-                )
-
-                // Weekly chart
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Daily Activity")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
-
-                    UsageChartView(activities: appState.recentActivity)
-                        .frame(height: 120)
-                }
-                .padding(.horizontal, 16)
-
-                // Active sessions
-                if !appState.activeSessions.isEmpty {
-                    activeSessionsSection
+                if appState.accountUsage.isEmpty && appState.isLoading {
+                    VStack(spacing: 12) {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("Loading usage data...")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 40)
+                } else if appState.accountUsage.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "chart.bar.xaxis")
+                            .font(.system(size: 32))
+                            .foregroundStyle(.secondary)
+                        Text("Usage data unavailable")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 40)
+                } else {
+                    ForEach(appState.accounts) { account in
+                        if let usage = appState.accountUsage[account.id] {
+                            accountUsageCard(account: account, usage: usage)
+                        }
+                    }
                 }
 
-                // All-time stats
-                HStack(spacing: 20) {
-                    miniStat(
-                        label: "Total Messages",
-                        value: formatNumber(appState.usageSummary.totalMessages)
-                    )
-                    miniStat(
-                        label: "Total Sessions",
-                        value: formatNumber(appState.usageSummary.totalSessions)
-                    )
+                // Last updated
+                if let lastRefresh = appState.lastUsageRefresh {
+                    HStack {
+                        Spacer()
+                        Text("Updated \(lastRefresh, style: .relative) ago")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding(.horizontal, 16)
                 }
-                .padding(.horizontal, 16)
             }
             .padding(.vertical, 12)
         }
     }
 
-    // MARK: - Stats Section
+    // MARK: - Per-Account Card
 
-    private func statsSection(title: String, messages: Int, sessions: Int, toolCalls: Int) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-            HStack(spacing: 12) {
-                statCard(icon: "message.fill", label: "Messages", value: messages, color: .blue)
-                statCard(icon: "rectangle.stack.fill", label: "Sessions", value: sessions, color: .green)
-                statCard(icon: "wrench.fill", label: "Tool Calls", value: toolCalls, color: .orange)
-            }
+    private func accountUsageCard(account: Account, usage: UsageAPIResponse) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            accountHeader(account)
+            usageBars(usage)
+            extraUsageRow(usage.extraUsage)
         }
+        .padding(12)
+        .background(cardBackground(isActive: account.isActive))
         .padding(.horizontal, 16)
     }
 
-    private func statCard(icon: String, label: String, value: Int, color: Color) -> some View {
-        VStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.title3)
-                .foregroundStyle(color)
+    @ViewBuilder
+    private func accountHeader(_ account: Account) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: account.provider.iconName)
+                .font(.caption)
+                .foregroundStyle(account.isActive ? .purple : .secondary)
 
-            Text("\(value)")
-                .font(.system(.title3, design: .rounded, weight: .bold))
+            Text(account.email)
+                .font(.caption.weight(.medium))
+                .lineLimit(1)
 
-            Text(label)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+            if account.isActive {
+                Text("Active")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 1)
+                    .background(.green, in: Capsule())
+            }
+
+            Spacer()
+
+            if let sub = account.subscriptionType {
+                Text(sub)
+                    .font(.caption2)
+                    .foregroundStyle(.purple)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 1)
+                    .background(.purple.opacity(0.1), in: Capsule())
+            }
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
-        .background(color.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
     }
 
-    // MARK: - Active Sessions
+    @ViewBuilder
+    private func usageBars(_ usage: UsageAPIResponse) -> some View {
+        if let session = usage.fiveHour {
+            usageRow(label: "Session", resetText: session.resetTimeString, utilization: session.utilization ?? 0)
+        }
+        if let weekly = usage.sevenDay {
+            usageRow(label: "Weekly", resetText: weekly.resetTimeString, utilization: weekly.utilization ?? 0)
+        }
+    }
 
-    private var activeSessionsSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text("Active Sessions")
-                    .font(.subheadline.weight(.semibold))
+    @ViewBuilder
+    private func extraUsageRow(_ extra: ExtraUsage?) -> some View {
+        if let extra {
+            let enabled = extra.isEnabled == true
+            let iconColor: Color = enabled ? .orange : .gray
+            let statusColor: Color = enabled ? .orange : .gray
+            HStack(spacing: 6) {
+                Image(systemName: enabled ? "bolt.fill" : "bolt.slash")
+                    .font(.caption2)
+                    .foregroundStyle(iconColor)
+                Text("Extra usage")
+                    .font(.caption2)
                     .foregroundStyle(.secondary)
                 Spacer()
-                Text("\(appState.activeSessions.count)")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.green)
+                Text(enabled ? "On" : "Off")
+                    .font(.caption2)
+                    .foregroundStyle(statusColor)
             }
+        }
+    }
 
-            ForEach(appState.activeSessions) { session in
-                HStack(spacing: 8) {
-                    Circle()
-                        .fill(.green)
-                        .frame(width: 6, height: 6)
+    private func cardBackground(isActive: Bool) -> some View {
+        RoundedRectangle(cornerRadius: 10)
+            .fill(isActive ? Color.purple.opacity(0.03) : Color.gray.opacity(0.03))
+            .strokeBorder(isActive ? Color.purple.opacity(0.15) : Color.gray.opacity(0.12), lineWidth: 1)
+    }
 
-                    Text(session.cwd?.replacingOccurrences(of: NSHomeDirectory(), with: "~") ?? "Unknown")
-                        .font(.caption)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
+    // MARK: - Usage Row
 
-                    Spacer()
-
-                    if let date = session.startDate {
-                        Text(date, style: .relative)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
+    private func usageRow(label: String, resetText: String?, utilization: Double) -> some View {
+        VStack(spacing: 4) {
+            HStack {
+                Text(label)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                if let resetText {
+                    Text("Resets in \(resetText)")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
                 }
             }
+
+            HStack(spacing: 8) {
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(Color.gray.opacity(0.15))
+                            .frame(height: 6)
+
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(colorForUtilization(utilization))
+                            .frame(width: max(0, geo.size.width * min(utilization / 100.0, 1.0)), height: 6)
+                    }
+                }
+                .frame(height: 6)
+
+                Text("\(Int(utilization))%")
+                    .font(.caption2.weight(.medium).monospacedDigit())
+                    .foregroundStyle(colorForUtilization(utilization))
+                    .frame(width: 32, alignment: .trailing)
+            }
         }
-        .padding(.horizontal, 16)
     }
 
-    // MARK: - Mini Stat
-
-    private func miniStat(label: String, value: String) -> some View {
-        VStack(spacing: 2) {
-            Text(value)
-                .font(.system(.body, design: .rounded, weight: .semibold))
-            Text(label)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 6)
-        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 6))
-    }
-
-    private func formatNumber(_ n: Int) -> String {
-        if n >= 1000 {
-            return String(format: "%.1fK", Double(n) / 1000.0)
-        }
-        return "\(n)"
+    private func colorForUtilization(_ pct: Double) -> Color {
+        if pct >= 90 { return .red }
+        if pct >= 60 { return .orange }
+        return .green
     }
 }

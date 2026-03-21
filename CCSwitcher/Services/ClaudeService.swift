@@ -46,6 +46,42 @@ final class ClaudeService: Sendable {
         }
     }
 
+    // MARK: - Usage API
+
+    /// Fetch usage for a specific access token
+    func getUsageLimits(accessToken: String) async -> UsageAPIResponse? {
+        guard let url = URL(string: "https://api.anthropic.com/api/oauth/usage") else { return nil }
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("oauth-2025-04-20", forHTTPHeaderField: "anthropic-beta")
+
+        do {
+            let (responseData, response) = try await URLSession.shared.data(for: request)
+            let httpResponse = response as? HTTPURLResponse
+            guard httpResponse?.statusCode == 200 else {
+                log.error("[getUsageLimits] HTTP \(httpResponse?.statusCode ?? 0): \(String(data: responseData, encoding: .utf8)?.prefix(100) ?? "")")
+                return nil
+            }
+            let usage = try JSONDecoder().decode(UsageAPIResponse.self, from: responseData)
+            log.info("[getUsageLimits] session=\(usage.fiveHour?.utilization ?? -1)%, weekly=\(usage.sevenDay?.utilization ?? -1)%")
+            return usage
+        } catch {
+            log.error("[getUsageLimits] Error: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    /// Extract access token string from a token JSON (keychain format)
+    static func extractAccessToken(from tokenJSON: String) -> String? {
+        guard let data = tokenJSON.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let oauth = json["claudeAiOauth"] as? [String: Any],
+              let accessToken = oauth["accessToken"] as? String else {
+            return nil
+        }
+        return accessToken
+    }
+
     // MARK: - Account Switching
 
     func switchAccount(from currentAccount: Account, to targetAccount: Account) async throws {
