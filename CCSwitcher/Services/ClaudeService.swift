@@ -55,11 +55,15 @@ final class ClaudeService: Sendable {
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         request.setValue("oauth-2025-04-20", forHTTPHeaderField: "anthropic-beta")
 
+        log.debug("[getUsageLimits] REQUEST URL: \(url.absoluteString)")
+        log.debug("[getUsageLimits] REQUEST HEADERS: \(request.allHTTPHeaderFields ?? [:])")
+
         do {
             let (responseData, response) = try await URLSession.shared.data(for: request)
             let httpResponse = response as? HTTPURLResponse
             guard httpResponse?.statusCode == 200 else {
-                log.error("[getUsageLimits] HTTP \(httpResponse?.statusCode ?? 0): \(String(data: responseData, encoding: .utf8)?.prefix(100) ?? "")")
+                let responseString = String(data: responseData, encoding: .utf8) ?? ""
+                log.error("[getUsageLimits] HTTP \(httpResponse?.statusCode ?? 0) Error Response: \(responseString)")
                 return nil
             }
             let usage = try JSONDecoder().decode(UsageAPIResponse.self, from: responseData)

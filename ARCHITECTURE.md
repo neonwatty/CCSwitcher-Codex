@@ -516,3 +516,17 @@ diagnoseTokenHealth()
     │  └── SettingsView        │
     └──────────────────────────┘
 ```
+
+---
+
+## SwiftUI Settings Window Workaround for LSUIElement
+
+Because CCSwitcher is a pure menu bar application (`LSUIElement` = `true` in `Info.plist`), SwiftUI's native `Settings { ... }` scene and `SettingsLink` often fail to open or gain foreground focus. This happens because SwiftUI does not consider the application to have any active interactive scenes when only a `MenuBarExtra` is present.
+
+To circumvent this macOS limitation, CCSwitcher uses the **Lifecycle Keepalive** pattern:
+
+1. **Hidden Keepalive Window:** At startup, we declare a 1x1 pixel `WindowGroup("CCSwitcherKeepalive") { HiddenWindowView() }`.
+2. **True Invisibility:** The `HiddenWindowView` intercepts its own NSWindow on appearance and sets it to be `[.borderless]`, `alphaValue = 0`, positioned far off-screen (`x: -5000, y: -5000`), and configured to ignore all mouse events.
+3. **Triggering Settings:** `HiddenWindowView` listens for a custom `Notification.Name.ccswitcherOpenSettings` via Combine. When received, it invokes the native SwiftUI `@Environment(\.openSettings)` action.
+4. **Invocation:** In `MainMenuView`, when the user clicks the Settings gear icon, we post this notification. The hidden window (which SwiftUI recognizes as a valid, active scene) catches it and smoothly opens the native Settings window with proper focus.
+
