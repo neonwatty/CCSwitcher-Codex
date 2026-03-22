@@ -111,5 +111,17 @@ A native macOS app must look and feel like it belongs on the system.
 - **Asset Catalogs**: Use automated scripts to generate all required resolutions (`16x16` up to `1024x1024` in `1x` and `2x` scales) and their corresponding `Contents.json` to form a valid `.appiconset`.
 - **Translucency & Materials**: Liberally use `.background(.regularMaterial)` or `.ultraThinMaterial` in SwiftUI to get the native macOS frosted-glass blur effects that adapt to the user's desktop wallpaper and Dark Mode settings.
 
+## 9. Observability & Agent-Driven Iteration
+
+Modern software engineering heavily leverages AI Agents. To maximize an Agent's ability to autonomously fix bugs and optimize code, the app must have high observability.
+
+- **Persistent File Logging**: Do not rely solely on Xcode's console `print()`. Implement a unified logging system (e.g., `FileLogger`) that writes structured logs (Info, Warning, Error, Debug) to a persistent local file (like `~/Library/Logs/MyApp.log`).
+- **Performance & State Tracking**: Log critical lifecycle events, network request latencies, and state mutations. This provides the "breadcrumb trail" needed to diagnose complex state issues.
+- **The Agent Feedback Loop**: 
+  - When an AI Agent is tasked with modifying the app, it must follow an **Observe -> Act -> Validate** loop.
+  - After injecting code modifications, the Agent MUST automatically trigger a local compilation (`xcodebuild`).
+  - If tests exist, the Agent should run them. If not, the Agent should launch the built binary and use tools like `tail -f` or `grep` on the app's persistent log file to monitor the runtime behavior.
+  - The Agent must autonomously scan these logs for crashes, performance bottlenecks, or unexpected `[Error]` outputs, and iteratively refine its own code until the logs reflect a healthy, stable execution.
+
 ---
 *Maintained as the core standard for macOS engineering.*
