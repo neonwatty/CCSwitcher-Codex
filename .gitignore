@@ -20,4 +20,6 @@ Package.resolved
 *.swp
 *~
 CCSwitcher/Info.plist
-\n# XcodeGen generated project\nCCSwitcher.xcodeproj/
+
+# XcodeGen generated project
+CCSwitcher.xcodeproj/
