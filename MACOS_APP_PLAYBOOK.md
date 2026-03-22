@@ -135,5 +135,23 @@ Embrace mature, battle-tested third-party libraries via Swift Package Manager (S
 
 **Rule of Thumb for Agents**: When asked to implement a deeply complex feature (e.g., "add global keyboard shortcuts" or "implement an SQLite database"), an Agent should first suggest or utilize a well-known SPM library (like `HotKey` or `SQLite.swift`) rather than generating 1000 lines of fragile, low-level Swift code.
 
+## 11. Advanced AI-Driven Workflows (TDD & Refactoring)
+
+When collaborating with AI Agents (like Claude Code), the codebase must be structured to guide the AI safely and prevent it from introducing regressions.
+
+- **Test-Driven Development (TDD) as a Safety Net**:
+  - **Red-Green-Refactor**: When asking an Agent to fix a bug, instruct it to *first* write a failing test that reproduces the bug, and *then* implement the fix.
+  - **Characterization Tests**: Before allowing an AI to perform a large-scale refactor, have it write tests to lock down the existing behavior (Refactor Guards).
+- **Protocol-Based Abstractions**: AI Agents are much better at writing isolated, testable code when dependencies are abstracted. Define clear Protocols for Networking, Analytics, and Data Access layers so the AI can easily mock them during testing.
+- **SwiftUI Debugging**: Instruct Agents to utilize `Self._printChanges()` inside SwiftUI views to autonomously diagnose unnecessary re-renders and performance hangs.
+
+## 12. Apple Ecosystem Compliance & App Store Readiness
+
+Even if you distribute directly, adhering to App Store standards ensures your app remains future-proof and behaves like a first-class citizen.
+
+- **Privacy Manifests (`PrivacyInfo.xcprivacy`)**: Apple strictly enforces Privacy Manifests. Always declare the data your app collects and the "Required Reason APIs" (like File Timestamp APIs or User Defaults) your app uses.
+- **Accessibility by Default**: Do not treat accessibility as an afterthought. Instruct your AI to implement VoiceOver support (`.accessibilityLabel`, `.accessibilityValue`) and Dynamic Type natively from day one.
+- **HIG Compliance**: Applications should strictly follow the Human Interface Guidelines. For macOS, this means utilizing standard sidebars, native typography, and appropriate visual materials (like "Liquid Glass" translucent backgrounds).
+
 ---
 *Maintained as the core standard for macOS engineering.*
