@@ -121,3 +121,11 @@ jobs:
         with:
           name: CCSwitcher-macOS
           path: build/Release/CCSwitcher.dmg
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          files: build/Release/CCSwitcher.dmg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
