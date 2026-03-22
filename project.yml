@@ -21,10 +21,6 @@ targets:
     platform: macOS
     sources:
       - path: CCSwitcher
-        excludes:
-          - "Resources/**"
-    resources:
-      - path: CCSwitcher/Resources/Assets.xcassets
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: me.xueshi.ccswitcher
