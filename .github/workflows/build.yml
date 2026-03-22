@@ -57,21 +57,7 @@ jobs:
           # Apply partition list to prevent UI permission prompts
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
 
-      - name: Build App (Signed)
-        if: ${{ env.HAS_APPLE_SECRETS == 'true' }}
-        run: |
-          xcodebuild -project CCSwitcher.xcodeproj \
-            -scheme CCSwitcher \
-            -configuration Release \
-            CODE_SIGN_STYLE="Manual" \
-            CODE_SIGN_IDENTITY="Developer ID Application" \
-            ENABLE_HARDENED_RUNTIME=YES \
-            OTHER_CODE_SIGN_FLAGS="--timestamp" \
-            build \
-            SYMROOT=$(PWD)/build
-
-      - name: Build App (Unsigned fallback)
-        if: ${{ env.HAS_APPLE_SECRETS == 'false' }}
+      - name: Build App
         run: |
           xcodebuild -project CCSwitcher.xcodeproj \
             -scheme CCSwitcher \
@@ -81,6 +67,13 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             build \
             SYMROOT=$(PWD)/build
+
+      - name: Sign App
+        if: ${{ env.HAS_APPLE_SECRETS == 'true' }}
+        run: |
+          # Sign the app bundle with the Developer ID Application certificate
+          # Note: --options runtime is for the hardened runtime required by Notarization
+          codesign --force --options runtime --sign "Developer ID Application" --timestamp --entitlements CCSwitcher/Resources/CCSwitcher.entitlements build/Release/CCSwitcher.app
 
       - name: Create DMG
         run: |
