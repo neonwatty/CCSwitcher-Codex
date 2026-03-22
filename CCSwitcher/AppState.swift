@@ -75,7 +75,7 @@ final class AppState: ObservableObject {
         isLoading = false
     }
 
-    func startAutoRefresh(interval: TimeInterval = 30) {
+    func startAutoRefresh(interval: TimeInterval = 300) {
         stopAutoRefresh()
         refreshTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             guard let self else { return }
