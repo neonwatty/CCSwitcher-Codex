@@ -43,9 +43,27 @@ final class UpdateChecker: ObservableObject {
                 
                 let (data, response) = try await URLSession.shared.data(for: request)
                 
-                guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+                guard let httpResponse = response as? HTTPURLResponse else {
                     if manual {
                         self.showAlert(title: "Update Check Failed", message: "Could not connect to GitHub. Please try again later.")
+                    }
+                    return
+                }
+                
+                if httpResponse.statusCode == 403 || httpResponse.statusCode == 429 {
+                    if manual {
+                        self.showAlert(title: "Rate Limit Exceeded", message: "GitHub API rate limit exceeded. Please try again later.")
+                    }
+                    return
+                } else if httpResponse.statusCode == 404 {
+                    // This happens if the repository has no releases yet
+                    if manual {
+                        self.showAlert(title: "Up to date", message: "No releases found on GitHub.")
+                    }
+                    return
+                } else if httpResponse.statusCode != 200 {
+                    if manual {
+                        self.showAlert(title: "Update Check Failed", message: "GitHub API returned status code \(httpResponse.statusCode).")
                     }
                     return
                 }
