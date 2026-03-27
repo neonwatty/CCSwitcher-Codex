@@ -168,15 +168,20 @@ struct MainMenuView: View {
     // MARK: - Tab Bar
 
     private var tabBar: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 4) {
             ForEach(Tab.allCases, id: \.self) { tab in
                 Text(tab.rawValue)
                     .font(.subheadline.weight(selectedTab == tab ? .semibold : .regular))
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                    .background(selectedTab == tab ? Color.accentColor.opacity(0.1) : .clear)
+                    .padding(.vertical, 6)
+                    .background {
+                        if selectedTab == tab {
+                            Capsule()
+                                .fill(Color.accentColor.opacity(0.12))
+                        }
+                    }
                     .foregroundStyle(selectedTab == tab ? .primary : .secondary)
-                    .contentShape(Rectangle())
+                    .contentShape(Capsule())
                     .onTapGesture {
                         withAnimation(.easeInOut(duration: 0.15)) {
                             selectedTab = tab
@@ -184,6 +189,8 @@ struct MainMenuView: View {
                     }
             }
         }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
     }
 
     // MARK: - Footer
