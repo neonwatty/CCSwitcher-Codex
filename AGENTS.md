@@ -1,4 +1,18 @@
-# Agent Guidelines for CCSwitcher
+# CCSwitcher Agent Guidelines
 
-- **Single Source of Truth**: `project.yml` is the absolute and ONLY source of truth. Do NOT attempt to manually edit, read, or generate `Info.plist`. All project configurations, packaging settings, URL Schemes, version numbers, and build settings MUST be modified exclusively within `project.yml`. XcodeGen will automatically generate the Xcode project and the Plist file based on this YAML specification.
-- **Xcode Project Handling**: The `CCSwitcher.xcodeproj` directory is ignored by Git and should be treated as a disposable build artifact. Any structural changes to the project (e.g., adding/removing files, changing folder structures, altering build targets) MUST be done by modifying `project.yml` and subsequently running `xcodegen generate` in the local environment. Do NOT modify the `.pbxproj` file directly.
+**Rules**:
+- `project.yml` is the ONLY source of truth. NEVER edit `.pbxproj` or `Info.plist` directly. Run `xcodegen generate` after changes.
+- `CCSwitcher.xcodeproj` is disposable (git-ignored).
+
+**App**: Minimalist macOS menu bar app for managing/switching Claude Code accounts.
+**Features**: Terminal-free login (Process/Pipe interception), zero-interaction token refresh (`security` CLI workaround), API usage tracking.
+
+**Architecture & Files**:
+- **Docs**: `ARCHITECTURE.md` (token flow), `BUILD_GUIDE.md`, `project.yml` (Xcode config).
+- **Entry**: `CCSwitcherApp.swift` (MenuBarExtra, lifecycle), `AppState.swift` (@MainActor state).
+- **Services**: 
+  - `ClaudeService.swift`: Wraps `claude` CLI (auth/status).
+  - `KeychainService.swift`: Manages OAuth tokens via `/usr/bin/security`.
+  - `*Parser.swift`: Parses `~/.claude/` JSON caches (Activity/Cost/Stats).
+- **Models**: `Account.swift`, `*Data.swift` (usage/cost/activity).
+- **Views**: `MainMenuView.swift` (dropdown), `SettingsView.swift` (native window), `HiddenWindowView.swift` (LSUIElement keepalive workaround).
