@@ -294,23 +294,13 @@ private struct MediumWidgetView: View {
                 // Right: Activity stats
                 VStack(alignment: .leading, spacing: 0) {
                     Spacer(minLength: 0)
+                    statRow(icon: "dollarsign.circle.fill", label: "Cost", value: formatCost(data.todayCost), valueColor: .green)
+                    Spacer(minLength: 4)
                     statRow(icon: "bubble.left.and.bubble.right", label: "Turns", value: "\(data.conversationTurns)")
                     Spacer(minLength: 4)
                     statRow(icon: "clock", label: "Active", value: data.activeCodingTime)
                     Spacer(minLength: 4)
                     statRow(icon: "doc.text", label: "Lines", value: "\(data.linesWritten)")
-                    Spacer(minLength: 4)
-                    HStack(spacing: 5) {
-                        Image(systemName: "dollarsign.circle.fill")
-                            .font(.caption2)
-                            .foregroundStyle(.green)
-                        Text(formatCost(data.todayCost))
-                            .font(.caption.weight(.semibold).monospacedDigit())
-                            .foregroundStyle(.green)
-                        Text("today")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                    }
                     Spacer(minLength: 0)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -349,7 +339,7 @@ private struct MediumWidgetView: View {
         }
     }
 
-    private func statRow(icon: String, label: String, value: String) -> some View {
+    private func statRow(icon: String, label: String, value: String, valueColor: Color = .primary) -> some View {
         HStack(spacing: 5) {
             Image(systemName: icon)
                 .font(.caption2)
@@ -361,6 +351,7 @@ private struct MediumWidgetView: View {
             Spacer()
             Text(value)
                 .font(.caption.weight(.medium).monospacedDigit())
+                .foregroundStyle(valueColor)
         }
     }
 }

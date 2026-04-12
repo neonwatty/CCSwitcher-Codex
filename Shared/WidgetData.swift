@@ -27,35 +27,25 @@ struct WidgetData: Codable {
     let modelUsage: [String: Int]
     let lastUpdated: Date
 
+    private static let appGroupID = "group.me.xueshi.ccswitcher"
     private static let fileName = "widget-data.json"
-    private static let subdir = "CCSwitcherWidget"
-    private static let widgetBundleID = "me.xueshi.ccswitcher.widget"
 
-    /// Load from the widget's own Application Support directory (called by widget extension).
+    private static var sharedContainerURL: URL? {
+        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupID)
+    }
+
+    /// Load from the shared App Group container.
     static func load() -> WidgetData? {
-        guard let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return nil }
-        let fileURL = appSupport.appendingPathComponent(subdir).appendingPathComponent(fileName)
+        guard let containerURL = sharedContainerURL else { return nil }
+        let fileURL = containerURL.appendingPathComponent(fileName)
         guard let data = try? Data(contentsOf: fileURL) else { return nil }
         return try? JSONDecoder().decode(WidgetData.self, from: data)
     }
 
-    /// Save into the widget extension's sandbox container (called by the main app, which is non-sandboxed).
-    /// Only writes if the container already exists — macOS creates it when the widget is first added
-    /// to the desktop. We must not create the container ourselves as it would lack the system metadata.
+    /// Save to the shared App Group container.
     func save() {
-        let home = FileManager.default.homeDirectoryForCurrentUser
-        let widgetContainer = home
-            .appendingPathComponent("Library/Containers")
-            .appendingPathComponent(Self.widgetBundleID)
-
-        guard FileManager.default.fileExists(atPath: widgetContainer.path) else { return }
-
-        let containerAppSupport = widgetContainer
-            .appendingPathComponent("Data/Library/Application Support")
-            .appendingPathComponent(Self.subdir)
-
-        try? FileManager.default.createDirectory(at: containerAppSupport, withIntermediateDirectories: true)
-        let fileURL = containerAppSupport.appendingPathComponent(Self.fileName)
+        guard let containerURL = Self.sharedContainerURL else { return }
+        let fileURL = containerURL.appendingPathComponent(Self.fileName)
         if let data = try? JSONEncoder().encode(self) {
             try? data.write(to: fileURL, options: .atomic)
         }

@@ -45,6 +45,9 @@ targets:
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"
     entitlements:
       path: CCSwitcher/Resources/CCSwitcher.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.me.xueshi.ccswitcher
     dependencies:
       - target: CCSwitcherWidgetExtension
         embed: true
@@ -82,3 +85,5 @@ targets:
       path: CCSwitcherWidget/Resources/CCSwitcherWidget.entitlements
       properties:
         com.apple.security.app-sandbox: true
+        com.apple.security.application-groups:
+          - group.me.xueshi.ccswitcher
