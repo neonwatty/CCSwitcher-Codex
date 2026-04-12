@@ -42,7 +42,7 @@ CCSwitcher is a lightweight, pure menu bar macOS application designed to help de
 ## Demo
 
 <p align="center">
-  <img src="assets/CCSwitcher-demo.gif" alt="CCSwitcher Demo" width="900" />
+  <video src="https://github.com/user-attachments/assets/ca37eaae-e8d8-4557-995e-bc154442c833" width="864" autoplay loop muted playsinline />
 </p>
 
 ## Key Features & Architecture
