@@ -76,9 +76,18 @@ jobs:
       - name: Sign App
         if: ${{ env.HAS_APPLE_SECRETS == 'true' }}
         run: |
-          # Sign the app bundle with the Developer ID Application certificate
-          # Note: --options runtime is for the hardened runtime required by Notarization
-          codesign --force --options runtime --sign "Developer ID Application" --timestamp --entitlements CCSwitcher/Resources/CCSwitcher.entitlements build/Release/CCSwitcher.app
+          # Sign nested extensions first (inside-out), then the main app.
+          # All bundles need --options runtime for notarization.
+
+          # 1. Sign the widget extension with its own entitlements
+          codesign --force --options runtime --sign "Developer ID Application" --timestamp \
+            --entitlements CCSwitcherWidget/Resources/CCSwitcherWidget.entitlements \
+            build/Release/CCSwitcher.app/Contents/Extensions/CCSwitcherWidgetExtension.appex
+
+          # 2. Sign the main app bundle
+          codesign --force --options runtime --sign "Developer ID Application" --timestamp \
+            --entitlements CCSwitcher/Resources/CCSwitcher.entitlements \
+            build/Release/CCSwitcher.app
 
       - name: Create DMG
         run: |
