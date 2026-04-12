@@ -17,33 +17,33 @@ extension Color {
     // MARK: - Card Fills
 
     /// Active/brand card background.
-    static let cardFill = adaptive(light: brand.opacity(0.03), dark: brand.opacity(0.10))
+    static let cardFill = adaptive(light: brand.opacity(0.22), dark: brand.opacity(0.38))
     /// Stronger active card background (e.g. active account row).
-    static let cardFillStrong = adaptive(light: brand.opacity(0.05), dark: brand.opacity(0.14))
+    static let cardFillStrong = adaptive(light: brand.opacity(0.28), dark: brand.opacity(0.45))
     /// Neutral/inactive card background.
-    static let cardFillNeutral = adaptive(light: Color.gray.opacity(0.03), dark: Color.gray.opacity(0.10))
+    static let cardFillNeutral = adaptive(light: Color.gray.opacity(0.18), dark: Color.gray.opacity(0.35))
     /// Green-tinted card background (cost cards).
-    static let cardFillGreen = adaptive(light: Color.green.opacity(0.03), dark: Color.green.opacity(0.10))
+    static let cardFillGreen = adaptive(light: Color.green.opacity(0.18), dark: Color.green.opacity(0.35))
 
     // MARK: - Card Borders
 
     /// Brand-colored card border.
-    static let cardBorderBrand = adaptive(light: brand.opacity(0.25), dark: brand.opacity(0.45))
+    static let cardBorderBrand = adaptive(light: brand.opacity(0.55), dark: brand.opacity(0.75))
     /// Neutral card border.
-    static let cardBorderNeutral = adaptive(light: Color.gray.opacity(0.20), dark: Color.gray.opacity(0.38))
+    static let cardBorderNeutral = adaptive(light: Color.gray.opacity(0.45), dark: Color.gray.opacity(0.65))
     /// Green card border (cost cards).
-    static let cardBorderGreen = adaptive(light: Color.green.opacity(0.25), dark: Color.green.opacity(0.45))
+    static let cardBorderGreen = adaptive(light: Color.green.opacity(0.55), dark: Color.green.opacity(0.75))
 
     // MARK: - Subtle Backgrounds
 
     /// Subtle brand tint for banners and badges.
-    static let subtleBrand = adaptive(light: brand.opacity(0.10), dark: brand.opacity(0.20))
+    static let subtleBrand = adaptive(light: brand.opacity(0.25), dark: brand.opacity(0.42))
     /// Tab bar outer background.
-    static let tabBackground = adaptive(light: brand.opacity(0.06), dark: brand.opacity(0.14))
+    static let tabBackground = adaptive(light: brand.opacity(0.20), dark: brand.opacity(0.38))
     /// Tab bar selected indicator.
-    static let tabSelected = adaptive(light: brand.opacity(0.12), dark: brand.opacity(0.24))
+    static let tabSelected = adaptive(light: brand.opacity(0.32), dark: brand.opacity(0.52))
     /// Progress bar track.
-    static let progressTrack = adaptive(light: Color.gray.opacity(0.15), dark: Color.gray.opacity(0.28))
+    static let progressTrack = adaptive(light: Color.gray.opacity(0.35), dark: Color.gray.opacity(0.55))
 }
 
 extension ShapeStyle where Self == Color {

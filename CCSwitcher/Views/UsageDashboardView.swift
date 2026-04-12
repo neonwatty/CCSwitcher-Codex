@@ -63,7 +63,7 @@ struct UsageDashboardView: View {
                     HStack {
                         Spacer()
                         Text("Updated \(lastRefresh, style: .relative) ago")
-                            .font(.caption2)
+                            .font(.caption)
                             .foregroundStyle(.tertiary)
                     }
                     .padding(.horizontal, 16)
@@ -80,10 +80,10 @@ struct UsageDashboardView: View {
         return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: "dollarsign.circle.fill")
-                    .font(.caption)
+                    .font(.subheadline)
                     .foregroundStyle(.green)
                 Text("Today's API-Equivalent Cost")
-                    .font(.caption.weight(.medium))
+                    .font(.subheadline.weight(.medium))
                     .lineLimit(1)
                 Spacer()
             }
@@ -108,10 +108,10 @@ struct UsageDashboardView: View {
         return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: "waveform.path.ecg")
-                    .font(.caption)
+                    .font(.subheadline)
                     .foregroundStyle(.brand)
                 Text("Today's Activity")
-                    .font(.caption.weight(.medium))
+                    .font(.subheadline.weight(.medium))
                 Spacer()
             }
 
@@ -146,15 +146,15 @@ struct UsageDashboardView: View {
 
     private func activityStat(icon: String, value: String, label: String, tooltip: String) -> some View {
         StatWithTooltip(tooltip: tooltip) {
-            VStack(spacing: 2) {
+            VStack(spacing: 3) {
                 Text(value)
-                    .font(.caption.weight(.semibold).monospacedDigit())
+                    .font(.subheadline.weight(.semibold).monospacedDigit())
                 HStack(spacing: 3) {
                     Image(systemName: icon)
-                        .font(.system(size: 9))
+                        .font(.caption2)
                         .foregroundStyle(.secondary)
                     Text(label)
-                        .font(.system(size: 9))
+                        .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
             }
@@ -164,16 +164,16 @@ struct UsageDashboardView: View {
 
     private func modelStat(name: String, count: Int, tooltip: String) -> some View {
         StatWithTooltip(tooltip: tooltip) {
-            VStack(spacing: 2) {
+            VStack(spacing: 3) {
                 Text("\(count)")
-                    .font(.caption.weight(.semibold).monospacedDigit())
+                    .font(.subheadline.weight(.semibold).monospacedDigit())
                     .foregroundStyle(count > 0 ? .primary : .quaternary)
                 HStack(spacing: 3) {
                     Circle()
                         .fill(modelColor(name))
-                        .frame(width: 6, height: 6)
+                        .frame(width: 7, height: 7)
                     Text(name)
-                        .font(.system(size: 9))
+                        .font(.caption2)
                         .foregroundStyle(count > 0 ? .tertiary : .quaternary)
                 }
             }
@@ -230,19 +230,19 @@ struct UsageDashboardView: View {
     private func accountHeader(_ account: Account) -> some View {
         HStack(spacing: 8) {
             Image(systemName: account.provider.iconName)
-                .font(.caption)
+                .font(.subheadline)
                 .foregroundStyle(account.isActive ? .brand : .secondary)
 
             Text(account.obfuscatedEmail)
-                .font(.caption.weight(.medium))
+                .font(.subheadline.weight(.medium))
                 .lineLimit(1)
 
             if account.isActive {
                 Text("Active")
-                    .font(.caption2.weight(.semibold))
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(.white)
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 1)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
                     .background(.green, in: Capsule())
             }
 
@@ -250,10 +250,10 @@ struct UsageDashboardView: View {
 
             if let sub = account.subscriptionType {
                 Text(sub)
-                    .font(.caption2)
+                    .font(.caption)
                     .foregroundStyle(.brand)
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 1)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
                     .background(.subtleBrand, in: Capsule())
             }
         }
@@ -277,14 +277,14 @@ struct UsageDashboardView: View {
             let statusColor: Color = enabled ? .orange : .gray
             HStack(spacing: 6) {
                 Image(systemName: enabled ? "bolt.fill" : "bolt.slash")
-                    .font(.caption2)
+                    .font(.caption)
                     .foregroundStyle(iconColor)
                 Text("Extra usage")
-                    .font(.caption2)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
                 Text(enabled ? "On" : "Off")
-                    .font(.caption2)
+                    .font(.caption)
                     .foregroundStyle(statusColor)
             }
         }
@@ -299,15 +299,15 @@ struct UsageDashboardView: View {
     // MARK: - Usage Row
 
     private func usageRow(label: String, resetText: String?, utilization: Double) -> some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 5) {
             HStack {
                 Text(label)
-                    .font(.caption2)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
                 if let resetText {
                     Text("Resets in \(resetText)")
-                        .font(.caption2)
+                        .font(.caption)
                         .foregroundStyle(.tertiary)
                 }
             }
@@ -317,19 +317,19 @@ struct UsageDashboardView: View {
                     ZStack(alignment: .leading) {
                         RoundedRectangle(cornerRadius: 3)
                             .fill(.progressTrack)
-                            .frame(height: 6)
+                            .frame(height: 7)
 
                         RoundedRectangle(cornerRadius: 3)
                             .fill(colorForUtilization(utilization))
-                            .frame(width: max(0, geo.size.width * min(utilization / 100.0, 1.0)), height: 6)
+                            .frame(width: max(0, geo.size.width * min(utilization / 100.0, 1.0)), height: 7)
                     }
                 }
-                .frame(height: 6)
+                .frame(height: 7)
 
                 Text("\(Int(utilization))%")
-                    .font(.caption2.weight(.medium).monospacedDigit())
+                    .font(.caption.weight(.medium).monospacedDigit())
                     .foregroundStyle(colorForUtilization(utilization))
-                    .frame(width: 32, alignment: .trailing)
+                    .frame(width: 34, alignment: .trailing)
             }
         }
     }
