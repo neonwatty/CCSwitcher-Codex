@@ -23,23 +23,23 @@ CCSwitcher ist eine leichtgewichtige, reine Menüleisten-Anwendung für macOS, d
 ## Screenshots
 
 <p align="center">
-  <img src="assets/CCSwitcher-light.png" alt="CCSwitcher — Light Theme" width="600" /><br/>
+  <img src="assets/CCSwitcher-light.png" alt="CCSwitcher — Light Theme" width="900" /><br/>
   <em>Helles Design</em>
 </p>
 
 <p align="center">
-  <img src="assets/CCSwitcher-dark.png" alt="CCSwitcher — Dark Theme" width="600" /><br/>
+  <img src="assets/CCSwitcher-dark.png" alt="CCSwitcher — Dark Theme" width="900" /><br/>
   <em>Dunkles Design</em>
 </p>
 
 <p align="center">
-  <img src="assets/CCSwitcher-widgets.png" alt="CCSwitcher — Desktop Widget" width="500" /><br/>
+  <img src="assets/CCSwitcher-widgets.png" alt="CCSwitcher — Desktop Widget" width="900" /><br/>
   <em>Desktop-Widget</em>
 </p>
 
 ## Demo
 
-<video src="assets/CCSwitcher-screen-high-quality-1.1.0.mp4" controls width="600"></video>
+<video src="assets/CCSwitcher-screen-high-quality-1.1.0.mp4" controls width="900"></video>
 
 ## Zentrale Funktionen & Architektur
 

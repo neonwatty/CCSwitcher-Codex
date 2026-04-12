@@ -23,23 +23,23 @@ CCSwitcher est une application macOS légère, fonctionnant exclusivement dans l
 ## Captures d'écran
 
 <p align="center">
-  <img src="assets/CCSwitcher-light.png" alt="CCSwitcher — Light Theme" width="600" /><br/>
+  <img src="assets/CCSwitcher-light.png" alt="CCSwitcher — Light Theme" width="900" /><br/>
   <em>Thème clair</em>
 </p>
 
 <p align="center">
-  <img src="assets/CCSwitcher-dark.png" alt="CCSwitcher — Dark Theme" width="600" /><br/>
+  <img src="assets/CCSwitcher-dark.png" alt="CCSwitcher — Dark Theme" width="900" /><br/>
   <em>Thème sombre</em>
 </p>
 
 <p align="center">
-  <img src="assets/CCSwitcher-widgets.png" alt="CCSwitcher — Desktop Widget" width="500" /><br/>
+  <img src="assets/CCSwitcher-widgets.png" alt="CCSwitcher — Desktop Widget" width="900" /><br/>
   <em>Widget de bureau</em>
 </p>
 
 ## Démonstration
 
-<video src="assets/CCSwitcher-screen-high-quality-1.1.0.mp4" controls width="600"></video>
+<video src="assets/CCSwitcher-screen-high-quality-1.1.0.mp4" controls width="900"></video>
 
 ## Fonctionnalités clés et architecture
 
