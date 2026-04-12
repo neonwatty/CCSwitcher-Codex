@@ -5,6 +5,13 @@ options:
     macOS: "14.0"
   xcodeVersion: "16.0"
   generateEmptyDirectories: true
+  developmentLanguage: en
+  knownRegions:
+    - en
+    - zh-Hans
+    - ja
+    - de
+    - fr
 
 settings:
   base:

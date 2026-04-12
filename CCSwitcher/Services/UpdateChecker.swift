@@ -45,25 +45,25 @@ final class UpdateChecker: ObservableObject {
                 
                 guard let httpResponse = response as? HTTPURLResponse else {
                     if manual {
-                        self.showAlert(title: "Update Check Failed", message: "Could not connect to GitHub. Please try again later.")
+                        self.showAlert(title: String(localized: "Update Check Failed"), message: String(localized: "Could not connect to GitHub. Please try again later."))
                     }
                     return
                 }
                 
                 if httpResponse.statusCode == 403 || httpResponse.statusCode == 429 {
                     if manual {
-                        self.showAlert(title: "Rate Limit Exceeded", message: "GitHub API rate limit exceeded. Please try again later.")
+                        self.showAlert(title: String(localized: "Rate Limit Exceeded"), message: String(localized: "GitHub API rate limit exceeded. Please try again later."))
                     }
                     return
                 } else if httpResponse.statusCode == 404 {
                     // This happens if the repository has no releases yet
                     if manual {
-                        self.showAlert(title: "Up to date", message: "No releases found on GitHub.")
+                        self.showAlert(title: String(localized: "Up to date"), message: String(localized: "No releases found on GitHub."))
                     }
                     return
                 } else if httpResponse.statusCode != 200 {
                     if manual {
-                        self.showAlert(title: "Update Check Failed", message: "GitHub API returned status code \(httpResponse.statusCode).")
+                        self.showAlert(title: String(localized: "Update Check Failed"), message: String(localized: "GitHub API returned status code \(httpResponse.statusCode)."))
                     }
                     return
                 }
@@ -88,12 +88,12 @@ final class UpdateChecker: ObservableObject {
                     self.promptForUpdate(version: latestTag, releaseNotes: release.body ?? "", dmgURL: dmgURL, fallbackURL: release.html_url)
                 } else {
                     if manual {
-                        self.showAlert(title: "Up to date", message: "You are running the latest version of CCSwitcher (\(currentVersion)).")
+                        self.showAlert(title: String(localized: "Up to date"), message: String(localized: "You are running the latest version of CCSwitcher (\(currentVersion))."))
                     }
                 }
             } catch {
                 if manual {
-                    self.showAlert(title: "Update Check Failed", message: error.localizedDescription)
+                    self.showAlert(title: String(localized: "Update Check Failed"), message: error.localizedDescription)
                 }
             }
         }
@@ -116,16 +116,17 @@ final class UpdateChecker: ObservableObject {
     
     private func promptForUpdate(version: String, releaseNotes: String, dmgURL: URL?, fallbackURL: String) {
         let alert = NSAlert()
-        alert.messageText = "A new version of CCSwitcher is available!"
-        alert.informativeText = "Version \(version) is available. You are currently running version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown").\n\nWould you like to download it now?"
+        alert.messageText = String(localized: "A new version of CCSwitcher is available!")
+        let currentVer = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
+        alert.informativeText = String(localized: "Version \(version) is available. You are currently running version \(currentVer).\n\nWould you like to download it now?")
         alert.alertStyle = .informational
-        
+
         if dmgURL != nil {
-            alert.addButton(withTitle: "Download & Install")
+            alert.addButton(withTitle: String(localized: "Download & Install"))
         } else {
-            alert.addButton(withTitle: "View Release")
+            alert.addButton(withTitle: String(localized: "View Release"))
         }
-        alert.addButton(withTitle: "Later")
+        alert.addButton(withTitle: String(localized: "Later"))
         
         // Show alert and handle response
         if alert.runModal() == .alertFirstButtonReturn {
@@ -147,7 +148,7 @@ final class UpdateChecker: ObservableObject {
                             styleMask: [.titled, .nonactivatingPanel],
                             backing: .buffered,
                             defer: false)
-        panel.title = "Downloading Update"
+        panel.title = String(localized: "Downloading Update")
         panel.level = .floating
         panel.center()
         
@@ -157,7 +158,7 @@ final class UpdateChecker: ObservableObject {
         stack.spacing = 15
         stack.edgeInsets = NSEdgeInsets(top: 20, left: 20, bottom: 20, right: 20)
         
-        let label = NSTextField(labelWithString: "Downloading CCSwitcher.dmg...")
+        let label = NSTextField(labelWithString: String(localized: "Downloading CCSwitcher.dmg..."))
         label.font = .systemFont(ofSize: 13, weight: .medium)
         
         let indicator = NSProgressIndicator()
@@ -194,10 +195,10 @@ final class UpdateChecker: ObservableObject {
             
             // Prompt the user to quit so they can drag the new app to Applications
             let successAlert = NSAlert()
-            successAlert.messageText = "Download Complete"
-            successAlert.informativeText = "The update has been downloaded and opened. Please drag the new CCSwitcher to your Applications folder to replace the old one.\n\nDo you want to quit the current app now?"
-            successAlert.addButton(withTitle: "Quit CCSwitcher")
-            successAlert.addButton(withTitle: "Later")
+            successAlert.messageText = String(localized: "Download Complete")
+            successAlert.informativeText = String(localized: "The update has been downloaded and opened. Please drag the new CCSwitcher to your Applications folder to replace the old one.\n\nDo you want to quit the current app now?")
+            successAlert.addButton(withTitle: String(localized: "Quit CCSwitcher"))
+            successAlert.addButton(withTitle: String(localized: "Later"))
             
             if successAlert.runModal() == .alertFirstButtonReturn {
                 NSApp.terminate(nil)
@@ -205,7 +206,7 @@ final class UpdateChecker: ObservableObject {
             
         } catch {
             panel.close()
-            self.showAlert(title: "Download Failed", message: error.localizedDescription)
+            self.showAlert(title: String(localized: "Download Failed"), message: error.localizedDescription)
         }
         
         self.isDownloading = false
@@ -216,7 +217,7 @@ final class UpdateChecker: ObservableObject {
         alert.messageText = title
         alert.informativeText = message
         alert.alertStyle = .informational
-        alert.addButton(withTitle: "OK")
+        alert.addButton(withTitle: String(localized: "OK"))
         alert.runModal()
     }
 }

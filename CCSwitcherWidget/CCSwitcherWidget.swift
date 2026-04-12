@@ -150,10 +150,17 @@ private struct SmallWidgetView: View {
                         Image(systemName: "exclamationmark.triangle")
                             .font(.caption)
                             .foregroundStyle(.yellow)
-                        Text(account.errorMessage ?? "Error")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
+                        if let msg = account.errorMessage {
+                            Text(msg)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
+                        } else {
+                            Text("Error")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
+                        }
                     }
                 } else {
                     compactUsageBar(label: "Session", utilization: account.sessionUtilization)
@@ -182,7 +189,7 @@ private struct SmallWidgetView: View {
         }
     }
 
-    private func compactUsageBar(label: String, utilization: Double?) -> some View {
+    private func compactUsageBar(label: LocalizedStringKey, utilization: Double?) -> some View {
         let pct = utilization ?? 0
         return VStack(spacing: 3) {
             HStack {
@@ -257,10 +264,17 @@ private struct MediumWidgetView: View {
                                 Image(systemName: "exclamationmark.triangle")
                                     .font(.caption)
                                     .foregroundStyle(.yellow)
-                                Text(account.errorMessage ?? "Error")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(2)
+                                if let msg = account.errorMessage {
+                                    Text(msg)
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(2)
+                                } else {
+                                    Text("Error")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(2)
+                                }
                             }
                             Spacer(minLength: 0)
                         } else {
@@ -278,7 +292,7 @@ private struct MediumWidgetView: View {
                                     Text("Extra usage")
                                         .font(.caption2)
                                         .foregroundStyle(.secondary)
-                                    Text(extra ? "On" : "Off")
+                                    Text(LocalizedStringKey(extra ? "On" : "Off"))
                                         .font(.caption2)
                                         .foregroundStyle(extra ? .orange : .gray)
                                 }
@@ -311,7 +325,7 @@ private struct MediumWidgetView: View {
         }
     }
 
-    private func usageBar(label: String, utilization: Double?, resetTime: String?) -> some View {
+    private func usageBar(label: LocalizedStringKey, utilization: Double?, resetTime: String?) -> some View {
         let pct = utilization ?? 0
         return VStack(spacing: 3) {
             HStack {
@@ -342,7 +356,7 @@ private struct MediumWidgetView: View {
         }
     }
 
-    private func statRow(icon: String, label: String, value: String, valueColor: Color = .primary) -> some View {
+    private func statRow(icon: String, label: LocalizedStringKey, value: String, valueColor: Color = .primary) -> some View {
         HStack(spacing: 5) {
             Image(systemName: icon)
                 .font(.caption2)
@@ -413,7 +427,7 @@ private struct LargeWidgetView: View {
         }
     }
 
-    private func activityStat(icon: String, value: String, label: String, valueColor: Color = .primary) -> some View {
+    private func activityStat(icon: String, value: String, label: LocalizedStringKey, valueColor: Color = .primary) -> some View {
         VStack(spacing: 3) {
             Text(value)
                 .font(.callout.weight(.semibold).monospacedDigit())
@@ -481,10 +495,17 @@ private struct LargeWidgetView: View {
                     Image(systemName: "exclamationmark.triangle")
                         .font(.caption2)
                         .foregroundStyle(.yellow)
-                    Text(account.errorMessage ?? "Error")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                    if let msg = account.errorMessage {
+                        Text(msg)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    } else {
+                        Text("Error")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
                 }
             } else {
                 accountUsageBar(label: "Session", utilization: account.sessionUtilization, resetTime: account.sessionResetTime)
@@ -500,7 +521,7 @@ private struct LargeWidgetView: View {
         )
     }
 
-    private func accountUsageBar(label: String, utilization: Double?, resetTime: String?) -> some View {
+    private func accountUsageBar(label: LocalizedStringKey, utilization: Double?, resetTime: String?) -> some View {
         let pct = utilization ?? 0
         return HStack(spacing: 6) {
             Text(label)
@@ -580,11 +601,19 @@ private struct CircleWidgetView: View {
                     Image(systemName: "exclamationmark.triangle")
                         .font(.title3)
                         .foregroundStyle(.yellow)
-                    Text(account.errorMessage ?? "Error")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .lineLimit(3)
+                    if let msg = account.errorMessage {
+                        Text(msg)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(3)
+                    } else {
+                        Text("Error")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(3)
+                    }
                 }
             } else {
                 Text("No accounts")
@@ -596,7 +625,7 @@ private struct CircleWidgetView: View {
         }
     }
 
-    private func ringStat(label: String, resetTime: String?, utilization: Double?, accent: Color) -> some View {
+    private func ringStat(label: LocalizedStringKey, resetTime: String?, utilization: Double?, accent: Color) -> some View {
         let pct = utilization ?? 0
         return VStack(spacing: 4) {
             ZStack {

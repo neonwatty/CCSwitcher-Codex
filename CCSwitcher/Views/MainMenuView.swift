@@ -8,9 +8,15 @@ struct MainMenuView: View {
     @State private var selectedTab: Tab = .usage
 
     enum Tab: String, CaseIterable {
-        case usage = "Usage"
-        case costs = "Costs"
-        case accounts = "Accounts"
+        case usage, costs, accounts
+
+        var localizedTitle: LocalizedStringKey {
+            switch self {
+            case .usage: "Usage"
+            case .costs: "Costs"
+            case .accounts: "Accounts"
+            }
+        }
     }
 
     var body: some View {
@@ -94,28 +100,28 @@ struct MainMenuView: View {
     
     private var localOffPeakTimeString: String {
         guard let etTimeZone = TimeZone(identifier: "America/New_York") else {
-            return "Double limits: 2 PM - 8 AM ET & Weekends"
+            return String(localized: "Double limits: 2 PM - 8 AM ET & Weekends")
         }
-        
+
         let today = Date()
         var etCalendar = Calendar(identifier: .gregorian)
         etCalendar.timeZone = etTimeZone
-        
+
         // The double usage starts at 2:00 PM (14:00) ET and ends at 8:00 AM ET next day
         guard let etStartOffPeak = etCalendar.date(bySettingHour: 14, minute: 0, second: 0, of: today),
               let etEndOffPeak = etCalendar.date(bySettingHour: 8, minute: 0, second: 0, of: today) else {
-            return "Double limits: 2 PM - 8 AM ET & Weekends"
+            return String(localized: "Double limits: 2 PM - 8 AM ET & Weekends")
         }
-        
+
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         formatter.dateStyle = .none
         formatter.timeZone = TimeZone.current
-        
+
         let localStart = formatter.string(from: etStartOffPeak)
         let localEnd = formatter.string(from: etEndOffPeak)
-        
-        return "\(localStart) - \(localEnd) (Weekdays) & Weekends"
+
+        return String(localized: "\(localStart) - \(localEnd) (Weekdays) & Weekends")
     }
 
     // MARK: - Header
@@ -168,7 +174,7 @@ struct MainMenuView: View {
     private var tabBar: some View {
         HStack(spacing: 0) {
             ForEach(Tab.allCases, id: \.self) { tab in
-                Text(tab.rawValue)
+                Text(tab.localizedTitle)
                     .font(.subheadline.weight(selectedTab == tab ? .semibold : .regular))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 6)

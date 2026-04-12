@@ -61,7 +61,7 @@ struct CostDetailView: View {
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                     Spacer()
-                    Text(formatTokenCount(today.totalTokens) + " tokens")
+                    Text("\(formatTokenCount(today.totalTokens)) tokens")
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }

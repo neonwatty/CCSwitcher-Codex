@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Hover tooltip that works inside MenuBarExtra panels (where `.help()` doesn't).
 private struct StatWithTooltip<Content: View>: View {
-    let tooltip: String
+    let tooltip: LocalizedStringKey
     @ViewBuilder let content: Content
     @State private var isHovering = false
 
@@ -61,12 +61,14 @@ struct UsageDashboardView: View {
 
                 // Last updated
                 if let lastRefresh = appState.lastUsageRefresh {
-                    HStack {
+                    HStack(spacing: 4) {
                         Spacer()
-                        Text("Updated \(lastRefresh, style: .relative) ago")
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
+                        Image(systemName: "arrow.clockwise")
+                            .font(.caption2)
+                        Text(lastRefresh, style: .relative)
                     }
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
                     .padding(.horizontal, 16)
                 }
             }
@@ -100,7 +102,7 @@ struct UsageDashboardView: View {
         .padding(.horizontal, 16)
     }
 
-    private static let costDisclaimer = "Estimated API-equivalent cost of your Claude Code usage, for reference only."
+    private static let costDisclaimer: LocalizedStringKey = "Estimated API-equivalent cost of your Claude Code usage, for reference only."
 
     // MARK: - Today Activity Card
 
@@ -145,7 +147,7 @@ struct UsageDashboardView: View {
         .padding(.horizontal, 16)
     }
 
-    private func activityStat(icon: String, value: String, label: String, tooltip: String) -> some View {
+    private func activityStat(icon: String, value: String, label: LocalizedStringKey, tooltip: LocalizedStringKey) -> some View {
         StatWithTooltip(tooltip: tooltip) {
             VStack(spacing: 3) {
                 Text(value)
@@ -163,7 +165,7 @@ struct UsageDashboardView: View {
         }
     }
 
-    private func modelStat(name: String, count: Int, tooltip: String) -> some View {
+    private func modelStat(name: String, count: Int, tooltip: LocalizedStringKey) -> some View {
         StatWithTooltip(tooltip: tooltip) {
             VStack(spacing: 3) {
                 Text("\(count)")
@@ -284,7 +286,7 @@ struct UsageDashboardView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
-                Text(enabled ? "On" : "Off")
+                Text(LocalizedStringKey(enabled ? "On" : "Off"))
                     .font(.caption)
                     .foregroundStyle(statusColor)
             }
@@ -299,7 +301,7 @@ struct UsageDashboardView: View {
 
     // MARK: - Usage Row
 
-    private func usageRow(label: String, resetText: String?, utilization: Double) -> some View {
+    private func usageRow(label: LocalizedStringKey, resetText: String?, utilization: Double) -> some View {
         VStack(spacing: 5) {
             HStack {
                 Text(label)
