@@ -8,20 +8,27 @@ struct AccountSwitcherView: View {
     @State private var editingAccountId: UUID?
     @State private var editingLabel = ""
 
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
-        ScrollView {
-            VStack(spacing: 12) {
-                if appState.accounts.isEmpty {
-                    emptyState
-                } else {
-                    ForEach(appState.accounts) { account in
-                        accountRow(account)
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(spacing: 12) {
+                    if appState.accounts.isEmpty {
+                        emptyState
+                    } else {
+                        ForEach(appState.accounts) { account in
+                            accountRow(account)
+                        }
                     }
                 }
-
-                addAccountButtons
+                .padding(16)
             }
-            .padding(16)
+
+            addAccountButtons
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
+                .padding(.top, 8)
         }
     }
 
@@ -243,7 +250,16 @@ struct AccountSwitcherView: View {
                         .font(.caption)
                         .foregroundStyle(.textSecondary)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 6)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .strokeBorder(
+                                    colorScheme == .dark
+                                        ? Color.gray.opacity(0.4)
+                                        : Color.white.opacity(0.22),
+                                    lineWidth: 1
+                                )
+                        )
                 }
                 .buttonStyle(.plain)
             }
