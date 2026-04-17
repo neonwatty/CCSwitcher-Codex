@@ -231,8 +231,11 @@ final class ClaudeService: Sendable {
                     "\(homeDir)/.npm-global/bin"
                 ]
                 if claudePath.contains("/") {
-                    let claudeBinDir = URL(fileURLWithPath: claudePath).deletingLastPathComponent().path
-                    extraPaths.insert(claudeBinDir, at: 0)
+                    // Resolve symlinks so that e.g. /usr/local/bin/claude -> ~/.nvm/.../bin/claude
+                    // yields the NVM bin dir where `node` actually lives
+                    let resolved = URL(fileURLWithPath: claudePath).resolvingSymlinksInPath().path
+                    let resolvedBinDir = URL(fileURLWithPath: resolved).deletingLastPathComponent().path
+                    extraPaths.insert(resolvedBinDir, at: 0)
                 }
                 let existingPath = env["PATH"] ?? "/usr/bin:/bin"
                 env["PATH"] = (extraPaths + [existingPath]).joined(separator: ":")
