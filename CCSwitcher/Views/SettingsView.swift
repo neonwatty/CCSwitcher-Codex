@@ -107,6 +107,15 @@ struct SettingsView: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
+
+            VStack(spacing: 2) {
+                Link("More apps at xueshi.dev", destination: URL(string: "https://xueshi.dev")!)
+                    .font(.caption)
+                Text("© 2026 Xueshi Qiao")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.top, 8)
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
