@@ -28,6 +28,7 @@ struct CCSwitcherApp: App {
     @AppStorage("appLanguage") private var appLanguage = "auto"
 
     @State private var isDoubleUsageActive = false
+    @State private var didStartLaunchRefresh = false
     let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
     var body: some Scene {
@@ -36,6 +37,8 @@ struct CCSwitcherApp: App {
         WindowGroup("CCSwitcherKeepalive") {
             HiddenWindowView()
                 .onAppear {
+                    guard !didStartLaunchRefresh else { return }
+                    didStartLaunchRefresh = true
                     // Check for updates silently on app launch
                     updateChecker.checkForUpdates(manual: false)
                     checkDoubleUsage()
@@ -75,15 +78,7 @@ struct CCSwitcherApp: App {
     }
 
     private var menuBarLabel: some View {
-        HStack(spacing: 4) {
-            Image(systemName: isDoubleUsageActive ? "brain.head.profile.fill" : "brain.head.profile")
-            if showAccountName {
-                if let account = appState.activeAccount {
-                    Text(account.effectiveDisplayName(obfuscated: !showFullEmail))
-                        .font(.caption)
-                }
-            }
-        }
+        Image(systemName: isDoubleUsageActive ? "brain.head.profile.fill" : "brain.head.profile")
     }
     
     private func checkDoubleUsage() {

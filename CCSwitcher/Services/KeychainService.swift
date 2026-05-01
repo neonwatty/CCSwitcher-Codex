@@ -9,6 +9,16 @@ struct AccountBackup: Codable {
     let oauthAccount: [String: AnyCodable]
 }
 
+/// Per-account Codex backup. Codex stores ChatGPT auth in ~/.codex/auth.json,
+/// so the safest switch primitive is a complete auth-file snapshot.
+struct CodexAccountBackup: Codable {
+    let authJSON: String
+    let accountId: String
+    let email: String
+    let displayName: String
+    let planType: String?
+}
+
 /// Type-erased Codable wrapper for heterogeneous JSON values.
 struct AnyCodable: Codable, Equatable {
     let value: Any
@@ -194,8 +204,10 @@ final class KeychainService: Sendable {
 
     // MARK: - App Keychain operations (Backups)
 
-    private let appBackupService = "me.xueshi.ccswitcher.backups"
+    private let appBackupService = "me.local.ccswitcher.codex.backups"
     private let appBackupAccount = "all-accounts"
+    private let codexBackupService = "me.local.ccswitcher.codex.codex.backups"
+    private let codexBackupAccount = "all-accounts"
 
     private func loadBackupStore() -> [String: AccountBackup] {
         let query: [String: Any] = [
@@ -264,6 +276,93 @@ final class KeychainService: Sendable {
             return success
         } catch {
             log.error("[saveBackupStore] Failed: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    // MARK: - Codex Account Backups
+
+    func saveCodexAccountBackup(_ backup: CodexAccountBackup, forAccountId accountId: String) -> Bool {
+        log.info("[saveCodexBackup] Saving for \(accountId) (\(backup.email)), auth length=\(backup.authJSON.count)")
+        var store = loadCodexBackupStore()
+        store[accountId] = backup
+        let result = saveCodexBackupStore(store)
+        log.info("[saveCodexBackup] Result: \(result)")
+        return result
+    }
+
+    func getCodexAccountBackup(forAccountId accountId: String) -> CodexAccountBackup? {
+        let store = loadCodexBackupStore()
+        let backup = store[accountId]
+        if let backup {
+            log.info("[getCodexBackup] Found for \(accountId) (\(backup.email)), auth length=\(backup.authJSON.count)")
+        } else {
+            log.error("[getCodexBackup] No backup for accountId=\(accountId)")
+        }
+        return backup
+    }
+
+    @discardableResult
+    func removeCodexAccountBackup(forAccountId accountId: String) -> Bool {
+        log.info("[removeCodexBackup] Removing for accountId=\(accountId)")
+        var store = loadCodexBackupStore()
+        store.removeValue(forKey: accountId)
+        return saveCodexBackupStore(store)
+    }
+
+    private func loadCodexBackupStore() -> [String: CodexAccountBackup] {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: codexBackupService,
+            kSecAttrAccount as String: codexBackupAccount,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+
+        var item: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &item)
+
+        if status == errSecSuccess, let data = item as? Data,
+           let dict = try? JSONDecoder().decode([String: CodexAccountBackup].self, from: data) {
+            log.debug("[loadCodexBackupStore] Loaded \(dict.count) entries from Keychain")
+            return dict
+        }
+
+        log.debug("[loadCodexBackupStore] No existing Codex backups, returning empty")
+        return [:]
+    }
+
+    private func saveCodexBackupStore(_ store: [String: CodexAccountBackup]) -> Bool {
+        do {
+            let data = try JSONEncoder().encode(store)
+
+            let query: [String: Any] = [
+                kSecClass as String: kSecClassGenericPassword,
+                kSecAttrService as String: codexBackupService,
+                kSecAttrAccount as String: codexBackupAccount
+            ]
+
+            let attributes: [String: Any] = [
+                kSecValueData as String: data
+            ]
+
+            var status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
+
+            if status == errSecItemNotFound {
+                var newItem = query
+                newItem[kSecValueData as String] = data
+                status = SecItemAdd(newItem as CFDictionary, nil)
+            }
+
+            let success = status == errSecSuccess
+            if success {
+                log.debug("[saveCodexBackupStore] Saved \(store.count) entries to Keychain")
+            } else {
+                log.error("[saveCodexBackupStore] Failed to save to Keychain, OSStatus: \(status)")
+            }
+            return success
+        } catch {
+            log.error("[saveCodexBackupStore] Failed: \(error.localizedDescription)")
             return false
         }
     }

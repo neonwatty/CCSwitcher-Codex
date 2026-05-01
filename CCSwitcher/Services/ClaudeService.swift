@@ -142,7 +142,7 @@ final class ClaudeService: Sendable {
         request.setValue("oauth-2025-04-20", forHTTPHeaderField: "anthropic-beta")
 
         log.debug("[getUsageLimits] REQUEST URL: \(url.absoluteString)")
-        log.debug("[getUsageLimits] REQUEST HEADERS: \(request.allHTTPHeaderFields ?? [:])")
+        log.debug("[getUsageLimits] REQUEST HEADERS: Authorization=<redacted>, anthropic-beta=oauth-2025-04-20")
 
         let (responseData, response) = try await URLSession.shared.data(for: request)
         let httpResponse = response as? HTTPURLResponse

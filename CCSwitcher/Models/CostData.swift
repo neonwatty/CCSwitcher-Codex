@@ -21,6 +21,14 @@ struct ModelPricing {
         "claude-sonnet-4": ModelPricing(input: 3.0, output: 15.0, cacheWrite: 3.75, cacheRead: 0.30),
         "claude-haiku-4-5": ModelPricing(input: 1.0, output: 5.0, cacheWrite: 1.25, cacheRead: 0.10),
         "claude-haiku-3-5": ModelPricing(input: 0.80, output: 4.0, cacheWrite: 1.0, cacheRead: 0.08),
+        // OpenAI API-equivalent pricing as of 2026-04-30.
+        // For OpenAI models, cacheWrite is unused and cacheRead stores cached-input tokens.
+        "gpt-5.5": ModelPricing(input: 5.0, output: 30.0, cacheWrite: 0.0, cacheRead: 0.50),
+        "gpt-5.4": ModelPricing(input: 2.50, output: 15.0, cacheWrite: 0.0, cacheRead: 0.25),
+        "gpt-5.4-mini": ModelPricing(input: 0.75, output: 4.50, cacheWrite: 0.0, cacheRead: 0.075),
+        "gpt-5.3-codex": ModelPricing(input: 1.75, output: 14.0, cacheWrite: 0.0, cacheRead: 0.175),
+        "gpt-5.2-codex": ModelPricing(input: 1.75, output: 14.0, cacheWrite: 0.0, cacheRead: 0.175),
+        "gpt-5-codex": ModelPricing(input: 1.25, output: 10.0, cacheWrite: 0.0, cacheRead: 0.125),
     ]
 
     static func forModel(_ model: String) -> ModelPricing? {
@@ -89,4 +97,60 @@ struct CostSummary {
     }
 
     static let empty = CostSummary(todayCost: 0, dailyCosts: [])
+}
+
+extension CostSummary {
+    static func combined(_ summaries: [CostSummary]) -> CostSummary {
+        var byDate: [String: DailyCostAccumulator] = [:]
+
+        for summary in summaries {
+            for day in summary.dailyCosts {
+                byDate[day.date, default: DailyCostAccumulator()].add(day)
+            }
+        }
+
+        let dailyCosts = byDate.map { date, accumulator in
+            DailyCost(
+                date: date,
+                totalCost: accumulator.totalCost,
+                modelBreakdown: accumulator.modelBreakdown,
+                sessionCount: accumulator.sessionCount,
+                inputTokens: accumulator.inputTokens,
+                outputTokens: accumulator.outputTokens,
+                cacheWriteTokens: accumulator.cacheWriteTokens,
+                cacheReadTokens: accumulator.cacheReadTokens
+            )
+        }
+        .sorted { $0.date > $1.date }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let today = formatter.string(from: Date())
+        return CostSummary(
+            todayCost: dailyCosts.first(where: { $0.date == today })?.totalCost ?? 0,
+            dailyCosts: dailyCosts
+        )
+    }
+}
+
+private struct DailyCostAccumulator {
+    var totalCost: Double = 0
+    var modelBreakdown: [String: Double] = [:]
+    var sessionCount: Int = 0
+    var inputTokens: Int = 0
+    var outputTokens: Int = 0
+    var cacheWriteTokens: Int = 0
+    var cacheReadTokens: Int = 0
+
+    mutating func add(_ day: DailyCost) {
+        totalCost += day.totalCost
+        sessionCount += day.sessionCount
+        inputTokens += day.inputTokens
+        outputTokens += day.outputTokens
+        cacheWriteTokens += day.cacheWriteTokens
+        cacheReadTokens += day.cacheReadTokens
+        for (model, cost) in day.modelBreakdown {
+            modelBreakdown[model, default: 0] += cost
+        }
+    }
 }

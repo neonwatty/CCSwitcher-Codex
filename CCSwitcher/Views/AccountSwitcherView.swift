@@ -5,6 +5,7 @@ struct AccountSwitcherView: View {
     @EnvironmentObject private var appState: AppState
     @AppStorage("showFullEmail") private var showFullEmail = false
     @State private var showingAddConfirm = false
+    @State private var pendingAddProvider: AIProviderType = .claudeCode
     @State private var editingAccountId: UUID?
     @State private var editingLabel = ""
 
@@ -43,7 +44,7 @@ struct AccountSwitcherView: View {
             Text("No Accounts")
                 .font(.headline)
 
-            Text("Add your current Claude Code account to get started.")
+            Text("Add your current Claude Code or Codex account to get started.")
                 .font(.caption)
                 .foregroundStyle(.textSecondary)
                 .multilineTextAlignment(.center)
@@ -199,7 +200,7 @@ struct AccountSwitcherView: View {
         } else if showingAddConfirm {
             // Inline confirmation for "Add Current"
             VStack(spacing: 8) {
-                Text("This will capture the currently logged-in Claude Code account.")
+                Text("This will capture the currently logged-in \(pendingAddProvider.rawValue) account.")
                     .font(.caption)
                     .foregroundStyle(.textSecondary)
                     .multilineTextAlignment(.center)
@@ -213,7 +214,7 @@ struct AccountSwitcherView: View {
 
                     Button("Add Account") {
                         showingAddConfirm = false
-                        Task { await appState.addAccount() }
+                        Task { await appState.addAccount(provider: pendingAddProvider) }
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.brand)
@@ -229,40 +230,60 @@ struct AccountSwitcherView: View {
             )
         } else {
             VStack(spacing: 8) {
-                // Primary: Login new account via browser
-                Button {
-                    Task { await appState.loginNewAccount() }
-                } label: {
-                    Label("Login New Account", systemImage: "person.badge.plus")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundColor(AppStyle.buttonTextColor)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .background(Color.white, in: RoundedRectangle(cornerRadius: 8))
-                }
-                .buttonStyle(.plain)
+                HStack(spacing: 8) {
+                    Button {
+                        Task { await appState.loginNewAccount(provider: .claudeCode) }
+                    } label: {
+                        Label("Login Claude", systemImage: AIProviderType.claudeCode.iconName)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundColor(AppStyle.buttonTextColor)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(Color.white, in: RoundedRectangle(cornerRadius: 8))
+                    }
+                    .buttonStyle(.plain)
 
-                // Secondary: Capture already-logged-in account
-                Button {
-                    withAnimation { showingAddConfirm = true }
-                } label: {
-                    Label("Add Current Account", systemImage: "plus.circle")
-                        .font(.caption)
-                        .foregroundStyle(.textSecondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .strokeBorder(
-                                    colorScheme == .dark
-                                        ? Color.gray.opacity(0.4)
-                                        : Color.white.opacity(0.22),
-                                    lineWidth: 1
-                                )
-                        )
+                    Button {
+                        Task { await appState.loginNewAccount(provider: .codex) }
+                    } label: {
+                        Label("Login Codex", systemImage: AIProviderType.codex.iconName)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundColor(AppStyle.buttonTextColor)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(Color.white, in: RoundedRectangle(cornerRadius: 8))
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
+
+                HStack(spacing: 8) {
+                    addCurrentButton(provider: .claudeCode)
+                    addCurrentButton(provider: .codex)
+                }
             }
         }
+    }
+
+    private func addCurrentButton(provider: AIProviderType) -> some View {
+        Button {
+            pendingAddProvider = provider
+            withAnimation { showingAddConfirm = true }
+        } label: {
+            Label("Add \(provider.rawValue)", systemImage: "plus.circle")
+                .font(.caption)
+                .foregroundStyle(.textSecondary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .strokeBorder(
+                            colorScheme == .dark
+                                ? Color.gray.opacity(0.4)
+                                : Color.white.opacity(0.22),
+                            lineWidth: 1
+                        )
+                )
+        }
+        .buttonStyle(.plain)
     }
 }

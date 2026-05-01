@@ -24,6 +24,7 @@ private struct StatWithTooltip<Content: View>: View {
 struct UsageDashboardView: View {
     @EnvironmentObject private var appState: AppState
     @AppStorage("showFullEmail") private var showFullEmail = false
+    @State private var selectedProvider: ProviderUsageFilter = .all
 
     var body: some View {
         ScrollView {
@@ -50,13 +51,17 @@ struct UsageDashboardView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 40)
                 } else {
-                    // Today's cost banner (local parsing, no API needed)
-                    todayCostBanner
+                    providerFilter
 
-                    // Today's activity stats
+                    if selectedProvider == .all {
+                        combinedOverview
+                    } else {
+                        todayCostBanner
+                    }
+
                     todayActivityCard
 
-                    ForEach(appState.accounts) { account in
+                    ForEach(visibleAccounts) { account in
                         accountUsageCard(account: account, usage: appState.accountUsage[account.id])
                     }
                 }
@@ -78,23 +83,212 @@ struct UsageDashboardView: View {
         }
     }
 
+    private enum ProviderUsageFilter: String, CaseIterable, Identifiable {
+        case all = "All"
+        case claude = "Claude"
+        case codex = "Codex"
+
+        var id: String { rawValue }
+
+        var provider: AIProviderType? {
+            switch self {
+            case .all: return nil
+            case .claude: return .claudeCode
+            case .codex: return .codex
+            }
+        }
+
+        var title: String {
+            switch self {
+            case .all: return "All"
+            case .claude: return "Claude Code"
+            case .codex: return "Codex"
+            }
+        }
+
+        var tint: Color {
+            switch self {
+            case .all: return .brand
+            case .claude: return .brand
+            case .codex: return .blue
+            }
+        }
+    }
+
+    private var providerFilter: some View {
+        Picker("Provider", selection: $selectedProvider) {
+            ForEach(ProviderUsageFilter.allCases) { filter in
+                Text(filter.rawValue).tag(filter)
+            }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .sectionPadding()
+    }
+
+    private var visibleAccounts: [Account] {
+        guard let provider = selectedProvider.provider else { return appState.accounts }
+        return appState.accounts.filter { $0.provider == provider }
+    }
+
+    private var selectedCostSummary: CostSummary {
+        switch selectedProvider {
+        case .all: return appState.costSummary
+        case .claude: return appState.claudeCostSummary
+        case .codex: return appState.codexCostSummary
+        }
+    }
+
+    private var selectedActivityStats: ActivityStats {
+        switch selectedProvider {
+        case .all: return appState.activityStats
+        case .claude: return appState.claudeActivityStats
+        case .codex: return appState.codexActivityStats
+        }
+    }
+
+    private var combinedOverview: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "chart.bar.xaxis")
+                    .font(.subheadline)
+                    .foregroundStyle(.brand)
+                Text("Today's Usage")
+                    .font(.subheadline.weight(.medium))
+                Spacer()
+                Text(formatCost(appState.costSummary.todayCost))
+                    .font(.subheadline.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(.green)
+            }
+
+            HStack(spacing: 8) {
+                providerSummaryCard(
+                    provider: .claudeCode,
+                    title: "Claude Code",
+                    account: appState.activeClaudeAccount,
+                    usage: appState.activeClaudeAccount.flatMap { appState.accountUsage[$0.id] },
+                    cost: appState.claudeCostSummary,
+                    stats: appState.claudeActivityStats,
+                    tint: .brand
+                )
+                providerSummaryCard(
+                    provider: .codex,
+                    title: "Codex",
+                    account: appState.activeCodexAccount,
+                    usage: appState.activeCodexAccount.flatMap { appState.accountUsage[$0.id] },
+                    cost: appState.codexCostSummary,
+                    stats: appState.codexActivityStats,
+                    tint: .blue
+                )
+            }
+        }
+        .cardStyle()
+        .sectionPadding()
+    }
+
+    private func providerSummaryCard(
+        provider: AIProviderType,
+        title: String,
+        account: Account?,
+        usage: UsageAPIResponse?,
+        cost: CostSummary,
+        stats: ActivityStats,
+        tint: Color
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: provider.iconName)
+                    .font(.caption)
+                    .foregroundStyle(tint)
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+            }
+
+            Text(account?.effectiveDisplayName(obfuscated: !showFullEmail) ?? "No active account")
+                .font(.caption2)
+                .foregroundStyle(.textSecondary)
+                .lineLimit(1)
+
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(formatCost(cost.todayCost))
+                        .font(.subheadline.weight(.semibold).monospacedDigit())
+                        .foregroundStyle(.green)
+                    Text("Cost")
+                        .font(.caption2)
+                        .foregroundStyle(.textSecondary)
+                }
+                Spacer()
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("\(stats.conversationTurns)")
+                        .font(.subheadline.weight(.semibold).monospacedDigit())
+                    Text(provider == .codex ? "Turns" : "Messages")
+                        .font(.caption2)
+                        .foregroundStyle(.textSecondary)
+                }
+            }
+
+            if let usage {
+                miniUsageBar(label: "Session", utilization: usage.fiveHour?.utilization ?? 0)
+                miniUsageBar(label: "Weekly", utilization: usage.sevenDay?.utilization ?? 0)
+            } else {
+                Text("Usage unavailable")
+                    .font(.caption2)
+                    .foregroundStyle(.textSecondary)
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(tint.opacity(0.10))
+                .strokeBorder(tint.opacity(0.22), lineWidth: 1)
+        )
+    }
+
+    private func miniUsageBar(label: LocalizedStringKey, utilization: Double) -> some View {
+        VStack(spacing: 3) {
+            HStack {
+                Text(label)
+                    .font(.caption2)
+                    .foregroundStyle(.textSecondary)
+                Spacer()
+                Text("\(Int(utilization))%")
+                    .font(.caption2.weight(.medium).monospacedDigit())
+                    .foregroundStyle(colorForUtilization(utilization))
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(.progressTrack)
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(colorForUtilization(utilization))
+                        .frame(width: max(0, geo.size.width * min(utilization / 100.0, 1.0)))
+                }
+            }
+            .frame(height: 5)
+        }
+    }
+
     // MARK: - Today Cost Banner
 
     private var todayCostBanner: some View {
-        let cost = appState.costSummary.todayCost
+        let cost = selectedCostSummary.todayCost
         return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: "dollarsign.circle")
                     .font(.subheadline)
                     .foregroundStyle(.green)
-                Text("Today's API-Equivalent Cost")
+                Text("\(selectedProvider.title) API-Equivalent Cost")
                     .font(.subheadline.weight(.medium))
                     .lineLimit(1)
                 Spacer()
             }
 
             StatWithTooltip(tooltip: Self.costDisclaimer) {
-                Text(cost >= 1 ? String(format: "$%.2f", cost) : String(format: "$%.4f", cost))
+                Text(formatCost(cost))
                     .font(.title.weight(.semibold).monospacedDigit())
                     .foregroundStyle(.green)
             }
@@ -103,40 +297,40 @@ struct UsageDashboardView: View {
         .sectionPadding()
     }
 
-    private static let costDisclaimer: LocalizedStringKey = "Estimated API-equivalent cost of your Claude Code usage, for reference only."
+    private static let costDisclaimer: LocalizedStringKey = "Estimated API-equivalent cost of your Claude Code and Codex usage, for reference only."
 
     // MARK: - Today Activity Card
 
     private var todayActivityCard: some View {
-        let stats = appState.activityStats
+        let stats = selectedActivityStats
         return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: "waveform.path.ecg")
                     .font(.subheadline)
-                    .foregroundStyle(.brand)
-                Text("Today's Activity")
+                    .foregroundStyle(selectedProvider.tint)
+                Text("\(selectedProvider.title) Activity")
                     .font(.subheadline.weight(.medium))
                 Spacer()
             }
 
             // Top stats row
             HStack(spacing: 0) {
-                activityStat(icon: "bubble.left.and.bubble.right", value: "\(stats.conversationTurns)", label: "Turns",
-                             tooltip: "Messages you sent to Claude Code today")
+                activityStat(icon: "bubble.left.and.bubble.right", value: "\(stats.conversationTurns)", label: selectedProvider == .claude ? "Messages" : "Turns",
+                             tooltip: selectedProvider == .all ? "Messages you sent to Claude Code and turns you sent to Codex today." : "Interactions parsed from this provider's local logs today.")
                 activityStat(icon: "clock", value: stats.activeCodingTimeString, label: "Active",
-                             tooltip: "Estimated total time Claude worked for you today. Parallel sessions stack. Idle gaps >10 min excluded. This is an approximation based on message timestamps, not exact.")
+                             tooltip: "Estimated active time today. Parallel sessions stack. Idle gaps >10 min excluded. This is an approximation based on message timestamps, not exact.")
                 activityStat(icon: "doc.text", value: "\(stats.linesWritten)", label: "Lines",
-                             tooltip: "Estimated lines of code written by Claude via Edit/Write tools")
+                             tooltip: selectedProvider == .codex ? "Codex line-count parsing is not included yet." : "Estimated lines of code written by Claude Code via Edit/Write tools.")
             }
 
-            // Model usage row — same style as stats above
-            HStack(spacing: 0) {
-                modelStat(name: "Opus", count: stats.modelUsage["Opus"] ?? 0,
-                          tooltip: "Claude Opus 4 — most capable model, best for complex tasks")
-                modelStat(name: "Sonnet", count: stats.modelUsage["Sonnet"] ?? 0,
-                          tooltip: "Claude Sonnet 4 — balanced speed and capability")
-                modelStat(name: "Haiku", count: stats.modelUsage["Haiku"] ?? 0,
-                          tooltip: "Claude Haiku 4 — fastest model, best for simple tasks")
+            let topModels = Array(stats.topModels.prefix(4))
+            if !topModels.isEmpty {
+                HStack(spacing: 0) {
+                    ForEach(topModels, id: \.name) { model in
+                        modelStat(name: model.name, count: model.count,
+                                  tooltip: "Model response count parsed from local Claude Code and Codex logs.")
+                    }
+                }
             }
         }
         .cardStyle()
@@ -185,8 +379,16 @@ struct UsageDashboardView: View {
         case "Opus": return .brand
         case "Sonnet": return .blue
         case "Haiku": return .green
+        case "GPT-5.5": return .purple
+        case "GPT-5.4": return .cyan
+        case "GPT-5.4 mini": return .mint
+        case "Codex", "Codex Spark": return .orange
         default: return .gray
         }
+    }
+
+    private func formatCost(_ cost: Double) -> String {
+        cost >= 1 ? String(format: "$%.2f", cost) : String(format: "$%.4f", cost)
     }
 
     // MARK: - Per-Account Card
