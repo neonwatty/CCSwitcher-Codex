@@ -21,13 +21,15 @@ struct ModelPricing {
         "claude-sonnet-4": ModelPricing(input: 3.0, output: 15.0, cacheWrite: 3.75, cacheRead: 0.30),
         "claude-haiku-4-5": ModelPricing(input: 1.0, output: 5.0, cacheWrite: 1.25, cacheRead: 0.10),
         "claude-haiku-3-5": ModelPricing(input: 0.80, output: 4.0, cacheWrite: 1.0, cacheRead: 0.08),
-        // OpenAI API-equivalent pricing as of 2026-04-30.
+        // OpenAI API-equivalent pricing as of 2026-05-01.
         // For OpenAI models, cacheWrite is unused and cacheRead stores cached-input tokens.
         "gpt-5.5": ModelPricing(input: 5.0, output: 30.0, cacheWrite: 0.0, cacheRead: 0.50),
         "gpt-5.4": ModelPricing(input: 2.50, output: 15.0, cacheWrite: 0.0, cacheRead: 0.25),
         "gpt-5.4-mini": ModelPricing(input: 0.75, output: 4.50, cacheWrite: 0.0, cacheRead: 0.075),
         "gpt-5.3-codex": ModelPricing(input: 1.75, output: 14.0, cacheWrite: 0.0, cacheRead: 0.175),
         "gpt-5.2-codex": ModelPricing(input: 1.75, output: 14.0, cacheWrite: 0.0, cacheRead: 0.175),
+        "gpt-5.1-codex-max": ModelPricing(input: 1.25, output: 10.0, cacheWrite: 0.0, cacheRead: 0.125),
+        "gpt-5.1-codex": ModelPricing(input: 1.25, output: 10.0, cacheWrite: 0.0, cacheRead: 0.125),
         "gpt-5-codex": ModelPricing(input: 1.25, output: 10.0, cacheWrite: 0.0, cacheRead: 0.125),
     ]
 

@@ -285,6 +285,7 @@ struct CostDetailView: View {
             PricingRowData(model: "Haiku 4.5", input: "$1", output: "$5", cacheW: "$1.25", cacheR: "$0.10"),
             PricingRowData(model: "GPT-5.5", input: "$5", output: "$30", cacheW: "-", cacheR: "$0.50"),
             PricingRowData(model: "GPT-5.3 Codex", input: "$1.75", output: "$14", cacheW: "-", cacheR: "$0.175"),
+            PricingRowData(model: "GPT-5.1 Codex", input: "$1.25", output: "$10", cacheW: "-", cacheR: "$0.125"),
         ]
     }
 
