@@ -4,7 +4,8 @@ import SwiftUI
 struct CostDetailView: View {
     @EnvironmentObject private var appState: AppState
 
-    private static let pricingURL = URL(string: "https://platform.claude.com/docs/en/about-claude/pricing")!
+    private static let claudePricingURL = URL(string: "https://platform.claude.com/docs/en/about-claude/pricing")!
+    private static let openAIPricingURL = URL(string: "https://openai.com/api/pricing/")!
 
     var body: some View {
         ScrollView {
@@ -196,7 +197,7 @@ struct CostDetailView: View {
             .padding(.horizontal, 16)
 
             VStack(alignment: .leading, spacing: 10) {
-                Text("Cost is computed from Claude Code session logs (~/.claude/projects/), deduplicated by request ID.")
+                Text("Cost is computed from local Claude Code logs (~/.claude/projects/) and Codex logs (~/.codex/logs_2.sqlite).")
                     .font(.caption2)
                     .foregroundStyle(.textSecondary)
 
@@ -213,22 +214,37 @@ struct CostDetailView: View {
                 .clipShape(RoundedRectangle(cornerRadius: AppStyle.cardCornerRadius))
                 .overlay(RoundedRectangle(cornerRadius: AppStyle.cardCornerRadius).strokeBorder(.cardBorder, lineWidth: 1))
 
-                Text("Cache write = 5-min tier (1.25× base input). Cache read = 0.1× base input.")
+                Text("Claude cache write = 5-min tier. OpenAI cached input uses cached-token pricing where available.")
                     .font(.system(size: 9))
                     .foregroundStyle(.textSecondary)
 
-                Button {
-                    NSWorkspace.shared.open(Self.pricingURL)
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "link")
-                            .font(.caption2)
-                        Text("Official Pricing — platform.claude.com")
-                            .font(.caption2)
+                HStack(spacing: 12) {
+                    Button {
+                        NSWorkspace.shared.open(Self.claudePricingURL)
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "link")
+                                .font(.caption2)
+                            Text("Claude pricing")
+                                .font(.caption2)
+                        }
                     }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.blue)
+
+                    Button {
+                        NSWorkspace.shared.open(Self.openAIPricingURL)
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "link")
+                                .font(.caption2)
+                            Text("OpenAI pricing")
+                                .font(.caption2)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.blue)
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(.blue)
             }
             .cardStyle()
             .sectionPadding()
@@ -267,6 +283,9 @@ struct CostDetailView: View {
             PricingRowData(model: "Opus 4.6", input: "$5", output: "$25", cacheW: "$6.25", cacheR: "$0.50"),
             PricingRowData(model: "Sonnet 4.6", input: "$3", output: "$15", cacheW: "$3.75", cacheR: "$0.30"),
             PricingRowData(model: "Haiku 4.5", input: "$1", output: "$5", cacheW: "$1.25", cacheR: "$0.10"),
+            PricingRowData(model: "GPT-5.5", input: "$5", output: "$30", cacheW: "-", cacheR: "$0.50"),
+            PricingRowData(model: "GPT-5.3 Codex", input: "$1.75", output: "$14", cacheW: "-", cacheR: "$0.175"),
+            PricingRowData(model: "GPT-5.1 Codex", input: "$1.25", output: "$10", cacheW: "-", cacheR: "$0.125"),
         ]
     }
 

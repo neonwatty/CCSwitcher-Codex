@@ -33,3 +33,21 @@ struct ActivityStats: Sendable {
         return mins > 0 ? "\(hours)h \(mins)m" : "\(hours)h"
     }
 }
+
+extension ActivityStats {
+    static func combined(_ stats: [ActivityStats]) -> ActivityStats {
+        var result = ActivityStats.empty
+        for stat in stats {
+            result.conversationTurns += stat.conversationTurns
+            result.activeCodingMinutes += stat.activeCodingMinutes
+            result.linesWritten += stat.linesWritten
+            for (tool, count) in stat.toolUsage {
+                result.toolUsage[tool, default: 0] += count
+            }
+            for (model, count) in stat.modelUsage {
+                result.modelUsage[model, default: 0] += count
+            }
+        }
+        return result
+    }
+}

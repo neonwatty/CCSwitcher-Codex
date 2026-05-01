@@ -76,7 +76,7 @@
 "Cache W" = "缓存写";
 "Cache R" = "缓存读";
 "%lld sessions" = "%lld 个会话";
-"%@ tokens" = "%@ 令牌";
+"%@ tokens" = "%@ 词元";
 
 /* Account Switcher */
 "No Accounts" = "无账户";

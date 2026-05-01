@@ -19,9 +19,14 @@ final class AppState: ObservableObject {
     @Published var isLoggingIn = false
     @Published var errorMessage: String?
     @Published var claudeAvailable = false
+    @Published var codexAvailable = false
     @Published var lastUsageRefresh: Date?
     @Published var costSummary: CostSummary = .empty
+    @Published var claudeCostSummary: CostSummary = .empty
+    @Published var codexCostSummary: CostSummary = .empty
     @Published var activityStats: ActivityStats = .empty
+    @Published var claudeActivityStats: ActivityStats = .empty
+    @Published var codexActivityStats: ActivityStats = .empty
 
     // Store errors as special struct to surface in UI
     struct UsageErrorState {
@@ -35,13 +40,16 @@ final class AppState: ObservableObject {
     // MARK: - Services
 
     private let claudeService = ClaudeService.shared
+    private let codexService = CodexService.shared
     private let statsParser = StatsParser.shared
     private let costParser = CostParser.shared
     private let activityParser = ActivityParser.shared
+    private let codexUsageParser = CodexUsageParser.shared
     private let keychain = KeychainService.shared
 
     private let accountsKey = "com.ccswitcher.accounts"
     private var refreshTimer: Timer?
+    private var isRefreshing = false
 
     // MARK: - Initialization
 
@@ -58,19 +66,37 @@ final class AppState: ObservableObject {
             log.info("[refresh] Skipping: login in progress")
             return
         }
+        guard !isRefreshing else {
+            log.info("[refresh] Skipping: refresh already in progress")
+            return
+        }
+        isRefreshing = true
+        defer {
+            isRefreshing = false
+            isLoading = false
+        }
         isLoading = true
         errorMessage = nil
 
         claudeAvailable = await claudeService.isClaudeAvailable()
-        log.info("[refresh] Claude available: \(self.claudeAvailable)")
+        codexAvailable = await codexService.isCodexAvailable()
+        log.info("[refresh] Claude available: \(self.claudeAvailable), Codex available: \(self.codexAvailable)")
 
         if claudeAvailable {
             do {
                 let status = try await claudeService.getAuthStatus()
-                updateActiveAccount(from: status)
+                updateActiveClaudeAccount(from: status)
             } catch {
                 log.error("[refresh] getAuthStatus failed: \(error.localizedDescription)")
                 errorMessage = error.localizedDescription
+            }
+        }
+        if codexAvailable {
+            do {
+                let status = try codexService.getAuthStatus()
+                updateActiveCodexAccount(from: status)
+            } catch {
+                log.error("[refresh] Codex getAuthStatus failed: \(error.localizedDescription)")
             }
         }
 
@@ -85,18 +111,29 @@ final class AppState: ObservableObject {
         recentActivity = statsParser.getRecentActivity(days: 7)
         activeSessions = statsParser.getActiveSessions()
 
-        // Heavy JSONL parsing off main thread
-        let parser = costParser
-        let actParser = activityParser
-        let cost = await Task.detached { parser.getCostSummary() }.value
-        let activity = await Task.detached { actParser.getTodayStats() }.value
-        costSummary = cost
-        activityStats = activity
+        // Heavy local log parsing off main thread. Claude and Codex can both be
+        // used at the same time, so these summaries are intentionally combined.
+        let claudeCostParser = costParser
+        let claudeActivityParser = activityParser
+        let codexParser = codexUsageParser
+        async let claudeCost = Task.detached { claudeCostParser.getCostSummary() }.value
+        async let codexCost = Task.detached { codexParser.getCostSummary() }.value
+        async let claudeActivity = Task.detached { claudeActivityParser.getTodayStats() }.value
+        async let codexActivity = Task.detached { codexParser.getTodayStats() }.value
+        let claudeCostSummary = await claudeCost
+        let codexCostSummary = await codexCost
+        let claudeActivityStats = await claudeActivity
+        let codexActivityStats = await codexActivity
+        self.claudeCostSummary = claudeCostSummary
+        self.codexCostSummary = codexCostSummary
+        self.claudeActivityStats = claudeActivityStats
+        self.codexActivityStats = codexActivityStats
+        costSummary = CostSummary.combined([claudeCostSummary, codexCostSummary])
+        activityStats = ActivityStats.combined([claudeActivityStats, codexActivityStats])
 
-        log.info("[refresh] Usage: weekly=\(self.usageSummary.weeklyMessages) msgs, \(self.activeSessions.count) active sessions, today=$\(String(format: "%.2f", cost.todayCost)) turns=\(activity.conversationTurns)")
+        log.info("[refresh] Usage: weekly=\(self.usageSummary.weeklyMessages) msgs, \(self.activeSessions.count) active sessions, today=$\(String(format: "%.2f", costSummary.todayCost)) turns=\(activityStats.conversationTurns)")
 
         updateWidgetData()
-        isLoading = false
     }
 
     func startAutoRefresh(interval: TimeInterval = 300) {
@@ -114,13 +151,51 @@ final class AppState: ObservableObject {
         refreshTimer = nil
     }
 
+    var activeClaudeAccount: Account? {
+        accounts.first { $0.provider == .claudeCode && $0.isActive }
+    }
+
+    var activeCodexAccount: Account? {
+        accounts.first { $0.provider == .codex && $0.isActive }
+    }
+
+    func menuBarUsageLabel() -> String? {
+        let items: [String?] = [
+            activeClaudeAccount.map { "Claude \(usagePressure(for: $0))" },
+            activeCodexAccount.map { "Codex \(usagePressure(for: $0))" },
+        ]
+        let label = items.compactMap { $0 }.joined(separator: " · ")
+        return label.isEmpty ? activeAccount?.effectiveDisplayName(obfuscated: true) : label
+    }
+
+    private func usagePressure(for account: Account) -> String {
+        guard let usage = accountUsage[account.id] else { return "--" }
+        let values = [
+            usage.fiveHour?.utilization,
+            usage.sevenDay?.utilization,
+        ].compactMap { $0 }
+        guard let pressure = values.max() else { return "--" }
+        return "\(Int(pressure.rounded()))%"
+    }
+
     // MARK: - Account Management
 
-    func addAccount() async {
-        log.info("[addAccount] Starting add current account flow...")
+    func addAccount(provider: AIProviderType = .claudeCode) async {
+        switch provider {
+        case .claudeCode:
+            await addClaudeAccount()
+        case .codex:
+            await addCodexAccount()
+        case .gemini:
+            errorMessage = "Gemini is not implemented"
+        }
+    }
+
+    private func addClaudeAccount() async {
+        log.info("[addClaudeAccount] Starting add current account flow...")
         guard claudeAvailable else {
             errorMessage = String(localized: "Claude CLI not found", bundle: L10n.bundle)
-            log.error("[addAccount] Aborted: Claude CLI not found")
+            log.error("[addClaudeAccount] Aborted: Claude CLI not found")
             return
         }
 
@@ -128,14 +203,14 @@ final class AppState: ObservableObject {
             let status = try await claudeService.getAuthStatus()
             guard status.loggedIn, let email = status.email else {
                 errorMessage = String(localized: "Not logged in to Claude. Run 'claude auth login' first.", bundle: L10n.bundle)
-                log.error("[addAccount] Aborted: not logged in")
+                log.error("[addClaudeAccount] Aborted: not logged in")
                 return
             }
-            log.info("[addAccount] Current auth: logged in, sub=\(status.subscriptionType ?? "nil")")
+            log.info("[addClaudeAccount] Current auth: logged in, sub=\(status.subscriptionType ?? "nil")")
 
-            if accounts.contains(where: { $0.email == email }) {
+            if accounts.contains(where: { $0.provider == .claudeCode && $0.email == email }) {
                 errorMessage = String(localized: "Account already exists", bundle: L10n.bundle)
-                log.warning("[addAccount] Aborted: duplicate account")
+                log.warning("[addClaudeAccount] Aborted: duplicate account")
                 return
             }
 
@@ -145,35 +220,96 @@ final class AppState: ObservableObject {
                 provider: .claudeCode,
                 orgName: status.orgName,
                 subscriptionType: status.subscriptionType,
-                isActive: accounts.isEmpty
+                isActive: !accounts.contains(where: { $0.provider == .claudeCode && $0.isActive })
             )
-            log.info("[addAccount] Created account model, id=\(account.id)")
+            log.info("[addClaudeAccount] Created account model, id=\(account.id)")
 
-            log.info("[addAccount] Capturing token from keychain...")
+            log.info("[addClaudeAccount] Capturing token from keychain...")
             let captured = claudeService.captureCurrentCredentials(forAccountId: account.id.uuidString)
             if !captured {
                 errorMessage = String(localized: "Could not capture auth token from keychain", bundle: L10n.bundle)
-                log.error("[addAccount] Token capture failed!")
+                log.error("[addClaudeAccount] Token capture failed!")
                 return
             }
-            log.info("[addAccount] Token captured successfully")
+            log.info("[addClaudeAccount] Token captured successfully")
 
-            if accounts.isEmpty {
+            if activeAccount == nil || account.isActive {
                 account.isActive = true
                 activeAccount = account
-                log.info("[addAccount] First account, setting as active")
+                log.info("[addClaudeAccount] Setting as active")
             }
 
             accounts.append(account)
             saveAccounts()
-            log.info("[addAccount] Account saved. Total accounts: \(self.accounts.count)")
+            log.info("[addClaudeAccount] Account saved. Total accounts: \(self.accounts.count)")
         } catch {
             errorMessage = error.localizedDescription
-            log.error("[addAccount] Error: \(error.localizedDescription)")
+            log.error("[addClaudeAccount] Error: \(error.localizedDescription)")
         }
     }
 
-    func loginNewAccount() async {
+    private func addCodexAccount() async {
+        log.info("[addCodexAccount] Starting add current account flow...")
+        guard codexAvailable else {
+            errorMessage = "Codex CLI not found"
+            return
+        }
+
+        do {
+            let status = try codexService.getAuthStatus()
+            guard status.loggedIn, let email = status.email else {
+                errorMessage = "Not logged in to Codex. Run 'codex login' first."
+                return
+            }
+
+            if accounts.contains(where: { $0.provider == .codex && $0.email == email }) {
+                errorMessage = String(localized: "Account already exists", bundle: L10n.bundle)
+                return
+            }
+
+            var account = Account(
+                email: email,
+                displayName: status.displayName ?? email,
+                provider: .codex,
+                orgName: nil,
+                subscriptionType: status.subscriptionType,
+                isActive: !accounts.contains(where: { $0.provider == .codex && $0.isActive })
+            )
+
+            let captured = codexService.captureCurrentCredentials(forAccountId: account.id.uuidString)
+            if !captured {
+                errorMessage = "Could not capture Codex auth from ~/.codex/auth.json"
+                return
+            }
+
+            if activeAccount == nil || account.isActive {
+                account.isActive = true
+                activeAccount = account
+            }
+
+            accounts.append(account)
+            saveAccounts()
+            await fetchAllAccountUsage()
+            updateWidgetData()
+            log.info("[addCodexAccount] Account saved. Total accounts: \(self.accounts.count)")
+        } catch {
+            errorMessage = error.localizedDescription
+            log.error("[addCodexAccount] Error: \(error.localizedDescription)")
+        }
+    }
+
+    func loginNewAccount(provider: AIProviderType = .claudeCode) async {
+        switch provider {
+        case .claudeCode:
+            await loginNewClaudeAccount()
+        case .codex:
+            await loginNewCodexAccount()
+        case .gemini:
+            errorMessage = "Gemini is not implemented"
+        }
+    }
+
+    private func loginNewClaudeAccount() async {
         log.info("[loginNewAccount] ===== Starting login new account flow =====")
         guard claudeAvailable else {
             errorMessage = String(localized: "Claude CLI not found", bundle: L10n.bundle)
@@ -186,7 +322,7 @@ final class AppState: ObservableObject {
 
         do {
             // 1. Back up current account (token + oauthAccount) before login overwrites them
-            if let current = activeAccount {
+            if let current = activeClaudeAccount {
                 log.info("[loginNewAccount] Step 1: Backing up current account (\(current.email))...")
                 let backed = claudeService.captureCurrentCredentials(forAccountId: current.id.uuidString)
                 log.info("[loginNewAccount] Step 1: Backup result: \(backed)")
@@ -211,7 +347,7 @@ final class AppState: ObservableObject {
             log.info("[loginNewAccount] Step 3: Logged in as \(email)")
 
             // 4. Check for duplicate — if exists, just refresh its backup
-            if let existing = accounts.firstIndex(where: { $0.email == email }) {
+            if let existing = accounts.firstIndex(where: { $0.provider == .claudeCode && $0.email == email }) {
                 log.info("[loginNewAccount] Step 4: Account already exists, refreshing backup")
                 _ = claudeService.captureCurrentCredentials(forAccountId: accounts[existing].id.uuidString)
                 errorMessage = String(localized: "Account already exists - credentials refreshed", bundle: L10n.bundle)
@@ -239,7 +375,7 @@ final class AppState: ObservableObject {
             }
 
             // 6. Mark new account as active
-            for i in accounts.indices {
+            for i in accounts.indices where accounts[i].provider == .claudeCode {
                 accounts[i].isActive = false
             }
             accounts.append(account)
@@ -257,6 +393,69 @@ final class AppState: ObservableObject {
         }
     }
 
+    private func loginNewCodexAccount() async {
+        log.info("[loginNewCodexAccount] ===== Starting login new Codex account flow =====")
+        guard codexAvailable else {
+            errorMessage = "Codex CLI not found"
+            return
+        }
+
+        isLoggingIn = true
+        errorMessage = nil
+
+        do {
+            if let current = accounts.first(where: { $0.provider == .codex && $0.isActive }) {
+                _ = codexService.captureCurrentCredentials(forAccountId: current.id.uuidString)
+            }
+
+            try await codexService.login()
+            let status = try codexService.getAuthStatus()
+            guard status.loggedIn, let email = status.email else {
+                errorMessage = "Codex login did not complete"
+                isLoggingIn = false
+                return
+            }
+
+            if let existing = accounts.firstIndex(where: { $0.provider == .codex && $0.email == email }) {
+                _ = codexService.captureCurrentCredentials(forAccountId: accounts[existing].id.uuidString)
+                errorMessage = String(localized: "Account already exists - credentials refreshed", bundle: L10n.bundle)
+                isLoggingIn = false
+                return
+            }
+
+            let account = Account(
+                email: email,
+                displayName: status.displayName ?? email,
+                provider: .codex,
+                orgName: nil,
+                subscriptionType: status.subscriptionType,
+                isActive: true
+            )
+
+            let captured = codexService.captureCurrentCredentials(forAccountId: account.id.uuidString)
+            if !captured {
+                errorMessage = "Could not capture Codex auth"
+                isLoggingIn = false
+                return
+            }
+
+            for i in accounts.indices where accounts[i].provider == .codex {
+                accounts[i].isActive = false
+            }
+            accounts.append(account)
+            activeAccount = account
+            saveAccounts()
+
+            isLoggingIn = false
+            await refresh()
+            log.info("[loginNewCodexAccount] ===== Login completed =====")
+        } catch {
+            errorMessage = error.localizedDescription
+            isLoggingIn = false
+            log.error("[loginNewCodexAccount] Error: \(error.localizedDescription)")
+        }
+    }
+
     func updateAccountLabel(_ account: Account, label: String?) {
         guard let index = accounts.firstIndex(where: { $0.id == account.id }) else { return }
         let trimmed = label?.trimmingCharacters(in: .whitespaces)
@@ -271,28 +470,49 @@ final class AppState: ObservableObject {
 
     func removeAccount(_ account: Account) {
         log.info("[removeAccount] Removing account \(account.id)")
-        keychain.removeAccountBackup(forAccountId: account.id.uuidString)
+        switch account.provider {
+        case .claudeCode:
+            keychain.removeAccountBackup(forAccountId: account.id.uuidString)
+        case .codex:
+            keychain.removeCodexAccountBackup(forAccountId: account.id.uuidString)
+        case .gemini:
+            break
+        }
         accounts.removeAll { $0.id == account.id }
-        if account.isActive, let first = accounts.first {
-            accounts[accounts.startIndex].isActive = true
-            activeAccount = accounts.first
+        if account.isActive, let first = accounts.first(where: { $0.provider == account.provider }) {
+            if let firstIndex = accounts.firstIndex(where: { $0.id == first.id }) {
+                accounts[firstIndex].isActive = true
+            }
+            activeAccount = first
             log.info("[removeAccount] Removed active account, switching to first remaining")
             Task { await switchTo(first) }
+        } else if activeAccount?.id == account.id {
+            activeAccount = accounts.first(where: \.isActive)
         }
         saveAccounts()
         log.info("[removeAccount] Done. Remaining accounts: \(self.accounts.count)")
     }
 
     func switchTo(_ account: Account) async {
-        guard let currentActive = activeAccount, currentActive.id != account.id else {
+        let currentActive = accounts.first(where: { $0.provider == account.provider && $0.isActive })
+        guard currentActive?.id != account.id else {
             log.info("[switchTo] No switch needed (same account or no active account)")
             return
         }
 
-        log.info("[switchTo] ===== Switching from \(currentActive.email) to \(account.email) =====")
+        log.info("[switchTo] ===== Switching to \(account.provider.rawValue) account \(account.email) =====")
 
         // Pre-switch: verify target has a backup
-        guard keychain.getAccountBackup(forAccountId: account.id.uuidString) != nil else {
+        let hasBackup: Bool
+        switch account.provider {
+        case .claudeCode:
+            hasBackup = keychain.getAccountBackup(forAccountId: account.id.uuidString) != nil
+        case .codex:
+            hasBackup = keychain.getCodexAccountBackup(forAccountId: account.id.uuidString) != nil
+        case .gemini:
+            hasBackup = false
+        }
+        guard hasBackup else {
             log.error("[switchTo] ABORT: no backup for target account")
             errorMessage = String(localized: "No stored credentials for \(account.email). Use re-authenticate to fix.", bundle: L10n.bundle)
             return
@@ -300,9 +520,17 @@ final class AppState: ObservableObject {
 
         isLoading = true
         do {
-            try await claudeService.switchAccount(from: currentActive, to: account)
+            switch account.provider {
+            case .claudeCode:
+                guard let currentActive else { throw ClaudeServiceError.switchVerificationFailed }
+                try await claudeService.switchAccount(from: currentActive, to: account)
+            case .codex:
+                try codexService.switchAccount(from: currentActive, to: account)
+            case .gemini:
+                throw CodexServiceError.noAuthForAccount(account.id.uuidString)
+            }
 
-            for i in accounts.indices {
+            for i in accounts.indices where accounts[i].provider == account.provider {
                 accounts[i].isActive = (accounts[i].id == account.id)
                 if accounts[i].id == account.id {
                     accounts[i].lastUsed = Date()
@@ -322,6 +550,10 @@ final class AppState: ObservableObject {
 
     /// Re-authenticate an account by running `claude auth login` and capturing fresh credentials.
     func reauthenticateAccount(_ account: Account) async {
+        if account.provider == .codex {
+            await reauthenticateCodexAccount(account)
+            return
+        }
         log.info("[reauth] ===== Re-authenticating account \(account.id) (\(account.email)) =====")
         guard claudeAvailable else {
             errorMessage = String(localized: "Claude CLI not found", bundle: L10n.bundle)
@@ -333,7 +565,7 @@ final class AppState: ObservableObject {
 
         do {
             // 1. Back up current active account before login overwrites it
-            if let current = activeAccount, current.id != account.id {
+            if let current = activeClaudeAccount, current.id != account.id {
                 log.info("[reauth] Backing up current account before login...")
                 _ = claudeService.captureCurrentCredentials(forAccountId: current.id.uuidString)
             }
@@ -367,7 +599,7 @@ final class AppState: ObservableObject {
                 accounts[index].subscriptionType = status.subscriptionType
 
                 // Mark this account as active (it's what the CLI is now using)
-                for i in accounts.indices {
+                for i in accounts.indices where accounts[i].provider == .claudeCode {
                     accounts[i].isActive = (i == index)
                 }
                 activeAccount = accounts[index]
@@ -384,6 +616,57 @@ final class AppState: ObservableObject {
         }
     }
 
+    private func reauthenticateCodexAccount(_ account: Account) async {
+        log.info("[reauthCodex] ===== Re-authenticating account \(account.id) (\(account.email)) =====")
+        guard codexAvailable else {
+            errorMessage = "Codex CLI not found"
+            return
+        }
+
+        isLoggingIn = true
+        errorMessage = nil
+
+        do {
+            if let current = accounts.first(where: { $0.provider == .codex && $0.isActive && $0.id != account.id }) {
+                _ = codexService.captureCurrentCredentials(forAccountId: current.id.uuidString)
+            }
+
+            try await codexService.login()
+            let status = try codexService.getAuthStatus()
+            guard status.loggedIn, let email = status.email else {
+                errorMessage = "Codex login did not complete"
+                isLoggingIn = false
+                return
+            }
+
+            guard email == account.email else {
+                errorMessage = "Logged in as \(email), but expected \(account.email). Credentials not updated."
+                isLoggingIn = false
+                return
+            }
+
+            let captured = codexService.captureCurrentCredentials(forAccountId: account.id.uuidString)
+            log.info("[reauthCodex] Auth capture result: \(captured)")
+
+            if let index = accounts.firstIndex(where: { $0.id == account.id }) {
+                accounts[index].displayName = status.displayName ?? accounts[index].displayName
+                accounts[index].subscriptionType = status.subscriptionType
+                for i in accounts.indices where accounts[i].provider == .codex {
+                    accounts[i].isActive = (i == index)
+                }
+                activeAccount = accounts[index]
+                saveAccounts()
+            }
+
+            isLoggingIn = false
+            await refresh()
+        } catch {
+            errorMessage = error.localizedDescription
+            isLoggingIn = false
+            log.error("[reauthCodex] Error: \(error.localizedDescription)")
+        }
+    }
+
     // MARK: - Usage
 
     private func fetchAllAccountUsage() async {
@@ -391,57 +674,93 @@ final class AppState: ObservableObject {
         // For active account: use live keychain token (with delegated refresh on expiry)
         // For other accounts: use backup token (no silent swap — just mark expired)
         for account in accounts {
-            let tokenJSON: String?
-            if account.isActive {
-                tokenJSON = keychain.readClaudeToken()
-            } else {
-                tokenJSON = keychain.getAccountBackup(forAccountId: account.id.uuidString)?.token
-            }
-            guard let tokenJSON, let accessToken = ClaudeService.extractAccessToken(from: tokenJSON) else {
-                log.warning("[fetchUsage] No token for \(account.email), skipping")
+            switch account.provider {
+            case .claudeCode:
+                await fetchClaudeUsage(for: account)
+            case .codex:
+                await fetchCodexUsage(for: account)
+            case .gemini:
                 continue
             }
-            do {
-                let usage = try await claudeService.getUsageLimits(accessToken: accessToken)
-                accountUsage[account.id] = usage
-                accountUsageErrors[account.id] = nil
-                log.info("[fetchUsage] \(account.email): session=\(usage.fiveHour?.utilization ?? -1)%, weekly=\(usage.sevenDay?.utilization ?? -1)%")
-            } catch ClaudeService.UsageError.expired {
-                log.warning("[fetchUsage] Token expired for \(account.email)")
-                if account.isActive {
-                    // Active account: delegated refresh via `claude auth status` is safe (no keychain swap)
-                    do {
-                        _ = try await claudeService.getAuthStatus()
-                        log.info("[fetchUsage] Delegated refresh completed for active account.")
-                        // Re-read refreshed token and retry
-                        if let refreshedJSON = keychain.readClaudeToken(),
-                           let refreshedToken = ClaudeService.extractAccessToken(from: refreshedJSON),
-                           let usage = try? await claudeService.getUsageLimits(accessToken: refreshedToken) {
-                            accountUsage[account.id] = usage
-                            accountUsageErrors[account.id] = nil
-                            log.info("[fetchUsage] Recovered \(account.email) via delegated refresh.")
-                        }
-                    } catch {
-                        log.error("[fetchUsage] Delegated refresh failed for active account: \(error.localizedDescription)")
-                        accountUsage[account.id] = nil
-                        accountUsageErrors[account.id] = UsageErrorState(isExpired: true, isRateLimited: false, message: String(localized: "Token expired. Switch to refresh.", bundle: L10n.bundle))
+        }
+    }
+
+    private func fetchClaudeUsage(for account: Account) async {
+        let tokenJSON: String?
+        if account.isActive {
+            tokenJSON = keychain.readClaudeToken()
+        } else {
+            tokenJSON = keychain.getAccountBackup(forAccountId: account.id.uuidString)?.token
+        }
+        guard let tokenJSON, let accessToken = ClaudeService.extractAccessToken(from: tokenJSON) else {
+            log.warning("[fetchClaudeUsage] No token for \(account.email), skipping")
+            return
+        }
+        do {
+            let usage = try await claudeService.getUsageLimits(accessToken: accessToken)
+            accountUsage[account.id] = usage
+            accountUsageErrors[account.id] = nil
+            log.info("[fetchClaudeUsage] \(account.email): session=\(usage.fiveHour?.utilization ?? -1)%, weekly=\(usage.sevenDay?.utilization ?? -1)%")
+        } catch ClaudeService.UsageError.expired {
+            log.warning("[fetchClaudeUsage] Token expired for \(account.email)")
+            if account.isActive {
+                do {
+                    _ = try await claudeService.getAuthStatus()
+                    if let refreshedJSON = keychain.readClaudeToken(),
+                       let refreshedToken = ClaudeService.extractAccessToken(from: refreshedJSON),
+                       let usage = try? await claudeService.getUsageLimits(accessToken: refreshedToken) {
+                        accountUsage[account.id] = usage
+                        accountUsageErrors[account.id] = nil
                     }
-                } else {
-                    // Non-active account: do NOT silent-swap keychain — just mark as expired.
-                    // Token will be refreshed when the user explicitly switches to this account.
-                    log.info("[fetchUsage] Non-active account \(account.email) token expired, skipping silent swap to avoid race condition with Claude Code CLI.")
+                } catch {
                     accountUsage[account.id] = nil
-                    accountUsageErrors[account.id] = UsageErrorState(isExpired: true, isRateLimited: false, message: String(localized: "Token expired. Switch to this account to refresh.", bundle: L10n.bundle))
+                    accountUsageErrors[account.id] = UsageErrorState(isExpired: true, isRateLimited: false, message: String(localized: "Token expired. Switch to refresh.", bundle: L10n.bundle))
                 }
-            } catch {
-                log.error("[fetchUsage] Failed to get usage for \(account.email): \(error.localizedDescription)")
+            } else {
                 accountUsage[account.id] = nil
-                if let usageError = error as? ClaudeService.UsageError, case .network(let msg) = usageError, msg.contains("429") {
-                    accountUsageErrors[account.id] = UsageErrorState(isExpired: false, isRateLimited: true, message: String(localized: "API Rate Limited. Try again later.", bundle: L10n.bundle))
-                } else {
-                    accountUsageErrors[account.id] = UsageErrorState(isExpired: false, isRateLimited: false, message: String(localized: "Could not fetch usage: \(error.localizedDescription)", bundle: L10n.bundle))
-                }
+                accountUsageErrors[account.id] = UsageErrorState(isExpired: true, isRateLimited: false, message: String(localized: "Token expired. Switch to this account to refresh.", bundle: L10n.bundle))
             }
+        } catch {
+            log.error("[fetchClaudeUsage] Failed to get usage for \(account.email): \(error.localizedDescription)")
+            accountUsage[account.id] = nil
+            if let usageError = error as? ClaudeService.UsageError, case .network(let msg) = usageError, msg.contains("429") {
+                accountUsageErrors[account.id] = UsageErrorState(isExpired: false, isRateLimited: true, message: String(localized: "API Rate Limited. Try again later.", bundle: L10n.bundle))
+            } else {
+                accountUsageErrors[account.id] = UsageErrorState(isExpired: false, isRateLimited: false, message: String(localized: "Could not fetch usage: \(error.localizedDescription)", bundle: L10n.bundle))
+            }
+        }
+    }
+
+    private func fetchCodexUsage(for account: Account) async {
+        let authJSON: String?
+        if account.isActive {
+            authJSON = codexService.readAuthSnapshot()
+        } else {
+            authJSON = keychain.getCodexAccountBackup(forAccountId: account.id.uuidString)?.authJSON
+        }
+        guard let authJSON else {
+            log.warning("[fetchCodexUsage] No auth for \(account.email), skipping")
+            return
+        }
+        do {
+            let (usage, planType) = try await codexService.getUsageLimits(authJSON: authJSON)
+            accountUsage[account.id] = usage
+            accountUsageErrors[account.id] = nil
+            if let planType, let index = accounts.firstIndex(where: { $0.id == account.id }) {
+                accounts[index].subscriptionType = planType
+                if activeAccount?.id == account.id {
+                    activeAccount = accounts[index]
+                }
+                saveAccounts()
+            }
+            log.info("[fetchCodexUsage] \(account.email): session=\(usage.fiveHour?.utilization ?? -1)%, weekly=\(usage.sevenDay?.utilization ?? -1)%")
+        } catch CodexService.UsageError.expired {
+            accountUsage[account.id] = nil
+            accountUsageErrors[account.id] = UsageErrorState(isExpired: true, isRateLimited: false, message: "Codex token expired. Switch to this account or re-authenticate.")
+        } catch {
+            log.error("[fetchCodexUsage] Failed to get usage for \(account.email): \(error.localizedDescription)")
+            accountUsage[account.id] = nil
+            accountUsageErrors[account.id] = UsageErrorState(isExpired: false, isRateLimited: false, message: "Could not fetch Codex usage: \(error.localizedDescription)")
         }
     }
 
@@ -464,9 +783,11 @@ final class AppState: ObservableObject {
 
         // Check each account has a backup
         for account in accounts {
-            if let backup = keychain.getAccountBackup(forAccountId: account.id.uuidString) {
+            if account.provider == .claudeCode, let backup = keychain.getAccountBackup(forAccountId: account.id.uuidString) {
                 let backupEmail = (backup.oauthAccount["emailAddress"]?.value as? String) ?? "?"
                 log.info("[diagnose] Backup [\(account.email)]: OK (email=\(backupEmail))")
+            } else if account.provider == .codex, let backup = keychain.getCodexAccountBackup(forAccountId: account.id.uuidString) {
+                log.info("[diagnose] Codex backup [\(account.email)]: OK (email=\(backup.email))")
             } else {
                 log.warning("[diagnose] Backup [\(account.email)]: MISSING — switch will fail")
             }
@@ -533,19 +854,24 @@ final class AppState: ObservableObject {
         }
     }
 
-    private func updateActiveAccount(from status: AuthStatus) {
+    private func updateActiveClaudeAccount(from status: AuthStatus) {
         guard status.loggedIn, let email = status.email else { return }
 
-        if let index = accounts.firstIndex(where: { $0.email == email }) {
-            for i in accounts.indices {
+        if let index = accounts.firstIndex(where: { $0.provider == .claudeCode && $0.email == email }) {
+            for i in accounts.indices where accounts[i].provider == .claudeCode {
                 accounts[i].isActive = (i == index)
             }
             accounts[index].orgName = status.orgName
             accounts[index].subscriptionType = status.subscriptionType
-            activeAccount = accounts[index]
+            if activeAccount == nil || activeAccount?.provider == .claudeCode {
+                activeAccount = accounts[index]
+            }
+            if keychain.getAccountBackup(forAccountId: accounts[index].id.uuidString) == nil {
+                _ = claudeService.captureCurrentCredentials(forAccountId: accounts[index].id.uuidString)
+            }
             saveAccounts()
-            log.info("[updateActiveAccount] Matched existing account at index \(index)")
-        } else if accounts.isEmpty {
+            log.info("[updateActiveClaudeAccount] Matched existing account at index \(index)")
+        } else if !accounts.contains(where: { $0.provider == .claudeCode }) {
             let account = Account(
                 email: email,
                 displayName: status.orgName ?? email,
@@ -555,12 +881,52 @@ final class AppState: ObservableObject {
                 isActive: true
             )
             accounts.append(account)
-            activeAccount = account
+            if activeAccount == nil {
+                activeAccount = account
+            }
             _ = claudeService.captureCurrentCredentials(forAccountId: account.id.uuidString)
             saveAccounts()
-            log.info("[updateActiveAccount] Auto-created first account, id=\(account.id)")
+            log.info("[updateActiveClaudeAccount] Auto-created first Claude account, id=\(account.id)")
         } else {
-            log.info("[updateActiveAccount] Logged-in account not in our list (might be new)")
+            log.info("[updateActiveClaudeAccount] Logged-in account not in our list (might be new)")
+        }
+    }
+
+    private func updateActiveCodexAccount(from status: CodexAuthStatus) {
+        guard status.loggedIn, let email = status.email else { return }
+
+        if let index = accounts.firstIndex(where: { $0.provider == .codex && $0.email == email }) {
+            for i in accounts.indices where accounts[i].provider == .codex {
+                accounts[i].isActive = (i == index)
+            }
+            accounts[index].displayName = status.displayName ?? accounts[index].displayName
+            accounts[index].subscriptionType = status.subscriptionType ?? accounts[index].subscriptionType
+            if activeAccount == nil || activeAccount?.provider == .codex {
+                activeAccount = accounts[index]
+            }
+            if keychain.getCodexAccountBackup(forAccountId: accounts[index].id.uuidString) == nil {
+                _ = codexService.captureCurrentCredentials(forAccountId: accounts[index].id.uuidString)
+            }
+            saveAccounts()
+            log.info("[updateActiveCodexAccount] Matched existing account at index \(index)")
+        } else if !accounts.contains(where: { $0.provider == .codex }) {
+            let account = Account(
+                email: email,
+                displayName: status.displayName ?? email,
+                provider: .codex,
+                orgName: nil,
+                subscriptionType: status.subscriptionType,
+                isActive: true
+            )
+            accounts.append(account)
+            if activeAccount == nil {
+                activeAccount = account
+            }
+            _ = codexService.captureCurrentCredentials(forAccountId: account.id.uuidString)
+            saveAccounts()
+            log.info("[updateActiveCodexAccount] Auto-created first Codex account, id=\(account.id)")
+        } else {
+            log.info("[updateActiveCodexAccount] Logged-in account not in our list (might be new)")
         }
     }
 }

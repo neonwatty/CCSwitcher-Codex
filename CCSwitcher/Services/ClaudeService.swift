@@ -9,16 +9,96 @@ final class ClaudeService: Sendable {
     private let claudePath: String
 
     private init() {
+        let home = NSHomeDirectory()
         let possiblePaths = [
+            // Homebrew cask / system prefix
             "/usr/local/bin/claude",
             "/opt/homebrew/bin/claude",
-            "\(NSHomeDirectory())/.npm-global/bin/claude",
-            "\(NSHomeDirectory())/.local/bin/claude",
-            "\(NSHomeDirectory())/.claude/local/claude"
-        ]
-        self.claudePath = possiblePaths.first { FileManager.default.fileExists(atPath: $0) }
-            ?? "claude"
-        log.info("Claude binary path: \(self.claudePath)")
+            // MacPorts
+            "/opt/local/bin/claude",
+            // Native installer (Anthropic-recommended) and legacy migrate-installer
+            "\(home)/.local/bin/claude",
+            "\(home)/.claude/local/claude",
+            // npm with custom prefix
+            "\(home)/.npm-global/bin/claude",
+            // Alternative JS package managers / Node version managers
+            "\(home)/.volta/bin/claude",
+            "\(home)/Library/pnpm/claude",
+            "\(home)/.bun/bin/claude",
+            "\(home)/.yarn/bin/claude"
+        ] + Self.nvmPaths()
+
+        if let found = possiblePaths.first(where: { FileManager.default.fileExists(atPath: $0) }) {
+            self.claudePath = found
+            log.info("Claude binary path: \(self.claudePath) (curated)")
+        } else if let shellPath = Self.shellPathLookup() {
+            self.claudePath = shellPath
+            log.info("Claude binary path: \(self.claudePath) (resolved via user shell PATH)")
+        } else {
+            self.claudePath = "claude"
+            log.warning("Claude binary not found in curated paths or user shell PATH; falling back to bare 'claude'")
+        }
+    }
+
+    /// Discover Claude binaries installed via NVM (Node Version Manager).
+    /// NVM stores node versions at ~/.nvm/versions/node/<version>/bin/.
+    private static func nvmPaths() -> [String] {
+        let nvmDir = "\(NSHomeDirectory())/.nvm/versions/node"
+        guard FileManager.default.fileExists(atPath: nvmDir) else { return [] }
+        guard let versions = try? FileManager.default.contentsOfDirectory(atPath: nvmDir) else {
+            log.warning("[nvmPaths] NVM directory exists but could not be read: \(nvmDir)")
+            return []
+        }
+        return versions
+            .filter { !$0.hasPrefix(".") }
+            .map { "\(nvmDir)/\($0)/bin/claude" }
+    }
+
+    /// Last-resort lookup: ask the user's interactive login shell where `claude` lives.
+    /// Catches install layouts the curated list doesn't enumerate (asdf shims, fnm, n,
+    /// pnpm/yarn/bun/Volta with non-default prefixes, custom npm prefixes, etc.).
+    /// Bounded by a short timeout so a slow .zshrc can't block app launch.
+    private static func shellPathLookup() -> String? {
+        let process = Process()
+        let stdout = Pipe()
+        process.executableURL = URL(fileURLWithPath: "/bin/zsh")
+        process.arguments = ["-ilc", "command -v claude"]
+        process.standardOutput = stdout
+        process.standardError = Pipe()
+        process.environment = ProcessInfo.processInfo.environment
+
+        do {
+            try process.run()
+        } catch {
+            log.warning("[shellPathLookup] Failed to launch /bin/zsh: \(error.localizedDescription)")
+            return nil
+        }
+
+        // Hard timeout — don't let a heavy shell rc file block forever.
+        let deadline = Date().addingTimeInterval(3.0)
+        while process.isRunning && Date() < deadline {
+            Thread.sleep(forTimeInterval: 0.05)
+        }
+        if process.isRunning {
+            process.terminate()
+            log.warning("[shellPathLookup] zsh exceeded 3s timeout; aborting")
+            return nil
+        }
+
+        guard process.terminationStatus == 0 else { return nil }
+        let data = stdout.fileHandleForReading.readDataToEndOfFile()
+        let raw = String(data: data, encoding: .utf8) ?? ""
+        // `command -v` may emit multiple lines if claude is shadowed; take the first.
+        let candidate = raw
+            .split(whereSeparator: \.isNewline)
+            .first
+            .map(String.init)?
+            .trimmingCharacters(in: .whitespaces) ?? ""
+        guard candidate.hasPrefix("/"),
+              FileManager.default.isExecutableFile(atPath: candidate) else {
+            return nil
+        }
+        return candidate
     }
 
     // MARK: - Auth Status
@@ -62,7 +142,7 @@ final class ClaudeService: Sendable {
         request.setValue("oauth-2025-04-20", forHTTPHeaderField: "anthropic-beta")
 
         log.debug("[getUsageLimits] REQUEST URL: \(url.absoluteString)")
-        log.debug("[getUsageLimits] REQUEST HEADERS: \(request.allHTTPHeaderFields ?? [:])")
+        log.debug("[getUsageLimits] REQUEST HEADERS: Authorization=<redacted>, anthropic-beta=oauth-2025-04-20")
 
         let (responseData, response) = try await URLSession.shared.data(for: request)
         let httpResponse = response as? HTTPURLResponse
@@ -207,12 +287,22 @@ final class ClaudeService: Sendable {
 
                 var env = ProcessInfo.processInfo.environment
                 let homeDir = NSHomeDirectory()
-                let extraPaths = [
+                // Include the parent directory of the discovered claude binary
+                // so that `node` is on PATH for NVM-installed scripts.
+                // Only add it when claudePath is absolute (skip the bare "claude" fallback).
+                var extraPaths = [
                     "/opt/homebrew/bin",
                     "/usr/local/bin",
                     "\(homeDir)/.local/bin",
                     "\(homeDir)/.npm-global/bin"
                 ]
+                if claudePath.contains("/") {
+                    // Resolve symlinks so that e.g. /usr/local/bin/claude -> ~/.nvm/.../bin/claude
+                    // yields the NVM bin dir where `node` actually lives
+                    let resolved = URL(fileURLWithPath: claudePath).resolvingSymlinksInPath().path
+                    let resolvedBinDir = URL(fileURLWithPath: resolved).deletingLastPathComponent().path
+                    extraPaths.insert(resolvedBinDir, at: 0)
+                }
                 let existingPath = env["PATH"] ?? "/usr/bin:/bin"
                 env["PATH"] = (extraPaths + [existingPath]).joined(separator: ":")
                 env["HOME"] = homeDir

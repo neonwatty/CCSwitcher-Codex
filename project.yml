@@ -1,6 +1,6 @@
 name: CCSwitcher
 options:
-  bundleIdPrefix: me.xueshi
+  bundleIdPrefix: me.local
   deploymentTarget:
     macOS: "14.0"
   xcodeVersion: "16.0"
@@ -37,16 +37,16 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleURLTypes:
-          - CFBundleURLName: me.xueshi.ccswitcher
+          - CFBundleURLName: me.local.ccswitcher.codex
             CFBundleURLSchemes:
-              - ccswitcher
+              - ccswitcher-codex
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: me.xueshi.ccswitcher
+        PRODUCT_BUNDLE_IDENTIFIER: me.local.ccswitcher.codex
         CODE_SIGN_ENTITLEMENTS: CCSwitcher/Resources/CCSwitcher.entitlements
         PRODUCT_NAME: CCSwitcher
-        MARKETING_VERSION: "1.4.0"
-        CURRENT_PROJECT_VERSION: "39"
+        MARKETING_VERSION: "1.4.4"
+        CURRENT_PROJECT_VERSION: "43"
         COMBINE_HIDPI_IMAGES: true
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"
@@ -54,7 +54,7 @@ targets:
       path: CCSwitcher/Resources/CCSwitcher.entitlements
       properties:
         com.apple.security.application-groups:
-          - group.me.xueshi.ccswitcher
+          - group.me.local.ccswitcher.codex
     dependencies:
       - target: CCSwitcherWidgetExtension
         embed: true
@@ -76,11 +76,11 @@ targets:
           EXExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: me.xueshi.ccswitcher.widget
+        PRODUCT_BUNDLE_IDENTIFIER: me.local.ccswitcher.codex.widget
         CODE_SIGN_ENTITLEMENTS: CCSwitcherWidget/Resources/CCSwitcherWidget.entitlements
         PRODUCT_NAME: CCSwitcherWidgetExtension
-        MARKETING_VERSION: "1.4.0"
-        CURRENT_PROJECT_VERSION: "39"
+        MARKETING_VERSION: "1.4.4"
+        CURRENT_PROJECT_VERSION: "43"
         SWIFT_VERSION: "6.0"
         MACOSX_DEPLOYMENT_TARGET: "14.0"
         CODE_SIGN_STYLE: Automatic
@@ -93,4 +93,4 @@ targets:
       properties:
         com.apple.security.app-sandbox: true
         com.apple.security.application-groups:
-          - group.me.xueshi.ccswitcher
+          - group.me.local.ccswitcher.codex

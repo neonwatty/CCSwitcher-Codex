@@ -27,7 +27,7 @@ struct WidgetData: Codable {
     let modelUsage: [String: Int]
     let lastUpdated: Date
 
-    private static let appGroupID = "group.me.xueshi.ccswitcher"
+    private static let appGroupID = "group.me.local.ccswitcher.codex"
     private static let fileName = "widget-data.json"
 
     private static var sharedContainerURL: URL? {
