@@ -6,14 +6,19 @@
   <a href="README.fr.md"><img src="https://img.shields.io/badge/Français-gray" alt="Français"></a>
 </p>
 
-# CCSwitcher
+# CCSwitcher Codex
 
-CCSwitcher is a lightweight, pure menu bar macOS application designed to help developers seamlessly manage and switch between multiple Claude Code accounts. It monitors API usage, gracefully handles background token refreshes, and circumvents common macOS menu bar app limitations.
+CCSwitcher Codex is a fork of CCSwitcher that monitors both Claude Code and Codex from one lightweight macOS menu bar app. It can track active accounts, quota usage, local activity, and API-equivalent cost estimates for both tools at the same time.
+
+This fork keeps its own local bundle identifier and app group (`me.local.ccswitcher.codex` / `group.me.local.ccswitcher.codex`) so it can be tested separately from the upstream CCSwitcher app.
 
 ## Features
 
 - **Multi-Account Management**: Easily add and switch between different Claude Code accounts with a single click from the macOS menu bar.
-- **Usage Dashboard**: Real-time monitoring of your Claude API usage limits (session and weekly) directly in the menu bar dropdown.
+- **Codex Account Monitoring**: Detects Codex CLI login state, backs up Codex auth snapshots, and monitors Codex quota usage.
+- **Dual-Provider Dashboard**: Shows Claude Code and Codex side by side, with provider filters for combined, Claude-only, and Codex-only views.
+- **Usage Dashboard**: Real-time monitoring of Claude Code and Codex usage limits directly in the menu bar dropdown.
+- **Local Cost Estimates**: Parses local Claude Code and Codex logs to estimate API-equivalent cost by model.
 - **Desktop Widgets**: Native macOS desktop widgets in small, medium, and large sizes showing account usage, costs, and activity stats. Includes a circular ring variant for at-a-glance usage monitoring.
 - **Dark Mode**: Full light and dark mode support with adaptive colors that follow your system appearance.
 - **Internationalization**: Available in English, 简体中文 (Chinese), 日本語 (Japanese), Deutsch (German), and Français (French).
@@ -21,6 +26,38 @@ CCSwitcher is a lightweight, pure menu bar macOS application designed to help de
 - **Zero-Interaction Token Refresh**: Intelligently handles Claude's OAuth token expiration by delegating the refresh process to the official CLI in the background.
 - **Seamless Login Flow**: Add new accounts without ever opening a terminal. The app silently invokes the CLI and handles the browser OAuth loop for you.
 - **System-Native UX**: A clean, native SwiftUI interface that behaves exactly like a first-class macOS menu bar utility, complete with a fully functional settings window.
+
+## Codex Support
+
+Codex support currently uses local Codex CLI state and telemetry:
+
+- Account identity and switching use `~/.codex/auth.json`.
+- Quota usage is fetched from the ChatGPT/Codex backend with the active Codex auth snapshot.
+- Activity and API-equivalent cost estimates are parsed from `~/.codex/history.jsonl` and `~/.codex/logs_2.sqlite`.
+
+Known limitations:
+
+- Codex line-count parsing is not implemented yet, so Codex "Lines" shows `0`.
+- Cost is an estimate. It uses local telemetry token counts and public API-equivalent pricing, not your ChatGPT subscription bill.
+- Codex telemetry may emit model names such as `gpt-5.5`; the app uses the matching OpenAI API-equivalent pricing row when available.
+- This is a public fork for local testing and is not affiliated with Anthropic, OpenAI, or the upstream CCSwitcher maintainer.
+
+## Install Local Build
+
+Build from source:
+
+```sh
+xcodegen generate
+xcodebuild -project CCSwitcher.xcodeproj -scheme CCSwitcher -configuration Debug CODE_SIGNING_ALLOWED=NO build
+```
+
+Install the built app manually:
+
+```sh
+rm -rf /Applications/CCSwitcher.app
+cp -R ~/Library/Developer/Xcode/DerivedData/CCSwitcher-*/Build/Products/Debug/CCSwitcher.app /Applications/CCSwitcher.app
+open /Applications/CCSwitcher.app
+```
 
 ## Screenshots
 
