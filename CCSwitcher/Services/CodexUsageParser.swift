@@ -130,9 +130,10 @@ final class CodexUsageParser: Sendable {
             let reasoning = intField("reasoning_token_count", in: body)
             let conversationId = field("conversation.id", in: body) ?? parts[0]
 
-            let nonCachedInput = max(0, input - cached)
+            // Codex telemetry reports input and cached-input as separate billing
+            // buckets, matching the Codex/OpenAI rate cards.
             usages.append(TokenUsage(
-                inputTokens: nonCachedInput,
+                inputTokens: input,
                 outputTokens: outputTokens + reasoning,
                 cacheWriteTokens: 0,
                 cacheReadTokens: cached,
