@@ -6,14 +6,19 @@
   <a href="README.fr.md"><img src="https://img.shields.io/badge/Français-gray" alt="Français"></a>
 </p>
 
-# CCSwitcher
+# CCSwitcher Codex
 
-CCSwitcher 是一款轻量级的纯 macOS 菜单栏应用程序，旨在帮助开发者无缝管理和切换多个 Claude Code 账户。它可以监控 API 使用情况，优雅地处理后台 token 刷新，并解决常见的 macOS 菜单栏应用限制问题。
+CCSwitcher Codex 是 [XueshiQiao/CCSwitcher](https://github.com/XueshiQiao/CCSwitcher) 的独立分叉，用一个轻量级 macOS 菜单栏应用同时监控 Claude Code 和 OpenAI Codex。它可以跟踪账户状态、配额窗口、本地活动以及两种工具的 API 等价成本估算。
+
+Codex 支持曾在上游 [issue #12](https://github.com/XueshiQiao/CCSwitcher/issues/12) 中提出，但因不符合上游项目方向而未合并，因此此分叉单独维护双提供方功能。
 
 ## 功能特性
 
-- **多账户管理**：在 macOS 菜单栏中一键添加和切换不同的 Claude Code 账户。
-- **用量仪表盘**：直接在菜单栏下拉菜单中实时监控 Claude API 使用限额（会话和每周）。
+- **Claude Code 账户切换**：在 macOS 菜单栏中一键添加和切换不同的 Claude Code 账户。
+- **Codex 账户监控**：检测 Codex CLI 登录状态，备份 Codex 认证快照，并监控 Codex 配额使用情况。
+- **双提供方仪表盘**：并排显示 Claude Code 和 Codex，并提供全部、Claude-only、Codex-only 过滤视图。
+- **用量仪表盘**：直接在菜单栏下拉菜单中实时监控 Claude Code 和 Codex 使用限额。
+- **本地成本估算**：解析本地 Claude Code 和 Codex 日志，按模型估算 API 等价成本。
 - **桌面小组件**：原生 macOS 桌面小组件，支持小、中、大三种尺寸，展示账户用量、费用和活动统计。还包含环形变体，方便一目了然地监控使用情况。
 - **深色模式**：完整支持亮色和深色模式，自适应颜色随系统外观自动切换。
 - **国际化**：支持 English、简体中文、日本語、Deutsch 和 Français 五种语言。

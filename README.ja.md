@@ -6,14 +6,19 @@
   <a href="README.fr.md"><img src="https://img.shields.io/badge/Français-gray" alt="Français"></a>
 </p>
 
-# CCSwitcher
+# CCSwitcher Codex
 
-CCSwitcherは、開発者が複数のClaude Codeアカウントをシームレスに管理・切り替えできるように設計された、軽量なmacOSメニューバー専用アプリケーションです。API使用状況の監視、バックグラウンドでのトークン更新の適切な処理、macOSメニューバーアプリにおける一般的な制限の回避を行います。
+CCSwitcher Codex は [XueshiQiao/CCSwitcher](https://github.com/XueshiQiao/CCSwitcher) の独立フォークで、軽量な macOS メニューバーアプリから Claude Code と OpenAI Codex を並べて監視できます。アカウント状態、クォータ枠、ローカルアクティビティ、両ツールの API 相当コスト見積もりを追跡します。
+
+Codex サポートは上流の [issue #12](https://github.com/XueshiQiao/CCSwitcher/issues/12) で提案されましたが、上流プロジェクトの方向性とは異なるため、このフォークで個別に維持しています。
 
 ## 機能
 
-- **マルチアカウント管理**: macOSメニューバーからワンクリックで、複数のClaude Codeアカウントを簡単に追加・切り替えできます。
-- **使用状況ダッシュボード**: Claude APIの使用制限（セッション単位・週単位）をメニューバーのドロップダウンからリアルタイムで監視できます。
+- **Claude Code アカウント切り替え**: macOSメニューバーからワンクリックで、複数のClaude Codeアカウントを簡単に追加・切り替えできます。
+- **Codex アカウント監視**: Codex CLI のログイン状態を検出し、Codex 認証スナップショットをバックアップして、Codex のクォータ使用量を監視します。
+- **デュアルプロバイダーダッシュボード**: Claude Code と Codex を並べて表示し、全体、Claude のみ、Codex のみの表示に切り替えられます。
+- **使用状況ダッシュボード**: Claude Code と Codex の使用制限をメニューバーのドロップダウンからリアルタイムで監視できます。
+- **ローカルコスト見積もり**: ローカルの Claude Code と Codex ログを解析し、モデル別の API 相当コストを見積もります。
 - **デスクトップウィジェット**: macOSネイティブのデスクトップウィジェットで、小・中・大の3サイズに対応。アカウントの使用状況、コスト、アクティビティ統計を表示します。一目で使用状況を把握できるサークルリングバリアントも含まれています。
 - **ダークモード**：ライトモードとダークモードに完全対応。システムの外観設定に合わせてカラーが自動的に切り替わります。
 - **多言語対応**：English、简体中文、日本語、Deutsch、Français の5言語に対応しています。

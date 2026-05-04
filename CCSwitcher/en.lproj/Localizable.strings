@@ -142,3 +142,16 @@
 /* About */
 "More apps at xueshi.dev" = "More apps at xueshi.dev";
 "© 2026 Xueshi Qiao" = "© 2026 Xueshi Qiao";
+
+/* Fork Branding */
+"CCSwitcher Codex" = "CCSwitcher Codex";
+"Claude Code and Codex Monitor" = "Claude Code and Codex Monitor";
+"Monitor Claude Code and Codex accounts, quota windows, activity, and estimated API-equivalent cost." = "Monitor Claude Code and Codex accounts, quota windows, activity, and estimated API-equivalent cost.";
+"Forked from XueshiQiao/CCSwitcher" = "Forked from XueshiQiao/CCSwitcher";
+"CCSwitcher Codex on GitHub" = "CCSwitcher Codex on GitHub";
+"Independent fork, not affiliated with Anthropic, OpenAI, or upstream CCSwitcher." = "Independent fork, not affiliated with Anthropic, OpenAI, or upstream CCSwitcher.";
+"Downloading CCSwitcher Codex.dmg..." = "Downloading CCSwitcher Codex.dmg...";
+"The update has been downloaded and opened. Please drag the new CCSwitcher Codex to your Applications folder to replace the old one.\n\nDo you want to quit the current app now?" = "The update has been downloaded and opened. Please drag the new CCSwitcher Codex to your Applications folder to replace the old one.\n\nDo you want to quit the current app now?";
+"Quit CCSwitcher Codex" = "Quit CCSwitcher Codex";
+"A new version of CCSwitcher Codex is available!" = "A new version of CCSwitcher Codex is available!";
+"You are running the latest version of CCSwitcher Codex (%@)." = "You are running the latest version of CCSwitcher Codex (%@).";

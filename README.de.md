@@ -6,14 +6,19 @@
   <a href="README.fr.md"><img src="https://img.shields.io/badge/Français-gray" alt="Français"></a>
 </p>
 
-# CCSwitcher
+# CCSwitcher Codex
 
-CCSwitcher ist eine leichtgewichtige, reine Menüleisten-Anwendung für macOS, die Entwicklern hilft, nahtlos zwischen mehreren Claude Code Konten zu wechseln und diese zu verwalten. Die App überwacht die API-Nutzung, handhabt Token-Aktualisierungen elegant im Hintergrund und umgeht gängige Einschränkungen von macOS-Menüleisten-Apps.
+CCSwitcher Codex ist ein unabhängiger Fork von [XueshiQiao/CCSwitcher](https://github.com/XueshiQiao/CCSwitcher), der Claude Code und OpenAI Codex in einer leichtgewichtigen macOS-Menüleisten-App nebeneinander überwacht. Die App verfolgt Kontostatus, Kontingentfenster, lokale Aktivität und API-äquivalente Kostenschätzungen für beide Werkzeuge.
+
+Codex-Unterstützung wurde upstream in [Issue #12](https://github.com/XueshiQiao/CCSwitcher/issues/12) vorgeschlagen, aber als außerhalb der aktuellen Projektausrichtung abgelehnt. Dieser Fork pflegt die Dual-Provider-Funktionalität daher separat.
 
 ## Funktionen
 
-- **Multi-Account-Verwaltung**: Einfaches Hinzufügen und Wechseln zwischen verschiedenen Claude Code Konten mit einem einzigen Klick aus der macOS-Menüleiste.
-- **Nutzungs-Dashboard**: Echtzeit-Überwachung Ihrer Claude API-Nutzungslimits (Sitzung und wöchentlich) direkt im Dropdown der Menüleiste.
+- **Claude Code Kontowechsel**: Einfaches Hinzufügen und Wechseln zwischen verschiedenen Claude Code Konten mit einem einzigen Klick aus der macOS-Menüleiste.
+- **Codex-Kontoüberwachung**: Erkennt den Codex CLI-Anmeldestatus, sichert Codex-Auth-Snapshots und überwacht Codex-Kontingente.
+- **Dual-Provider-Dashboard**: Zeigt Claude Code und Codex nebeneinander mit Filtern für Gesamtansicht, nur Claude und nur Codex.
+- **Nutzungs-Dashboard**: Echtzeit-Überwachung der Claude Code- und Codex-Nutzungslimits direkt im Dropdown der Menüleiste.
+- **Lokale Kostenschätzungen**: Parst lokale Claude Code- und Codex-Logs, um API-äquivalente Kosten nach Modell zu schätzen.
 - **Desktop-Widgets**: Native macOS Desktop-Widgets in kleiner, mittlerer und großer Größe, die Kontonutzung, Kosten und Aktivitätsstatistiken anzeigen. Enthält eine Ringdiagramm-Variante zur schnellen Nutzungsübersicht.
 - **Dunkelmodus**: Vollständige Unterstützung für hellen und dunklen Modus mit adaptiven Farben, die sich automatisch an das Systemerscheinungsbild anpassen.
 - **Internationalisierung**: Verfügbar in English, 简体中文 (Chinesisch), 日本語 (Japanisch), Deutsch und Français (Französisch).

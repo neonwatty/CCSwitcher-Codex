@@ -138,3 +138,16 @@
 /* Promo */
 "%@ - %@ (Weekdays) & Weekends" = "%1$@ - %2$@（工作日）及周末";
 "Double limits: 2 PM - 8 AM ET & Weekends" = "双倍额度：美东时间下午 2 点 - 上午 8 点及周末";
+
+/* Fork Branding */
+"CCSwitcher Codex" = "CCSwitcher Codex";
+"Claude Code and Codex Monitor" = "Claude Code 与 Codex 监控工具";
+"Monitor Claude Code and Codex accounts, quota windows, activity, and estimated API-equivalent cost." = "监控 Claude Code 和 Codex 账户、用量窗口、活动以及 API 等价成本估算。";
+"Forked from XueshiQiao/CCSwitcher" = "基于 XueshiQiao/CCSwitcher 的分叉";
+"CCSwitcher Codex on GitHub" = "GitHub 上的 CCSwitcher Codex";
+"Independent fork, not affiliated with Anthropic, OpenAI, or upstream CCSwitcher." = "独立分叉，与 Anthropic、OpenAI 或上游 CCSwitcher 无关联。";
+"Downloading CCSwitcher Codex.dmg..." = "正在下载 CCSwitcher Codex.dmg...";
+"The update has been downloaded and opened. Please drag the new CCSwitcher Codex to your Applications folder to replace the old one.\n\nDo you want to quit the current app now?" = "更新已下载并打开。请将新的 CCSwitcher Codex 拖入应用程序文件夹以替换旧版本。\n\n是否立即退出当前应用？";
+"Quit CCSwitcher Codex" = "退出 CCSwitcher Codex";
+"A new version of CCSwitcher Codex is available!" = "CCSwitcher Codex 有新版本可用！";
+"You are running the latest version of CCSwitcher Codex (%@)." = "您正在运行最新版本的 CCSwitcher Codex（%@）。";

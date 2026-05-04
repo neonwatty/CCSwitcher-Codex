@@ -6,14 +6,19 @@
   <a href="README.fr.md"><img src="https://img.shields.io/badge/Français%20✓-blue" alt="Français"></a>
 </p>
 
-# CCSwitcher
+# CCSwitcher Codex
 
-CCSwitcher est une application macOS légère, fonctionnant exclusivement dans la barre de menus, conçue pour aider les développeurs à gérer et basculer facilement entre plusieurs comptes Claude Code. Elle surveille l'utilisation de l'API, gère gracieusement le rafraîchissement des tokens en arrière-plan et contourne les limitations courantes des applications de barre de menus macOS.
+CCSwitcher Codex est un fork indépendant de [XueshiQiao/CCSwitcher](https://github.com/XueshiQiao/CCSwitcher) qui surveille Claude Code et OpenAI Codex côte à côte dans une application légère de barre de menus macOS. Elle suit l'état des comptes, les fenêtres de quota, l'activité locale et les estimations de coût équivalent API pour les deux outils.
+
+La prise en charge de Codex a été proposée upstream dans [l'issue #12](https://github.com/XueshiQiao/CCSwitcher/issues/12), puis refusée car hors de la direction actuelle du projet. Ce fork maintient donc séparément la fonctionnalité double fournisseur.
 
 ## Fonctionnalités
 
-- **Gestion multi-comptes** : Ajoutez et basculez facilement entre différents comptes Claude Code en un seul clic depuis la barre de menus macOS.
-- **Tableau de bord d'utilisation** : Surveillance en temps réel de vos limites d'utilisation de l'API Claude (session et hebdomadaire) directement dans le menu déroulant de la barre de menus.
+- **Bascule de comptes Claude Code** : Ajoutez et basculez facilement entre différents comptes Claude Code en un seul clic depuis la barre de menus macOS.
+- **Surveillance des comptes Codex** : Détecte l'état de connexion du CLI Codex, sauvegarde les instantanés d'authentification Codex et surveille les quotas Codex.
+- **Tableau de bord double fournisseur** : Affiche Claude Code et Codex côte à côte, avec des filtres combiné, Claude seul et Codex seul.
+- **Tableau de bord d'utilisation** : Surveillance en temps réel des limites Claude Code et Codex directement dans le menu déroulant de la barre de menus.
+- **Estimations de coût locales** : Analyse les journaux locaux Claude Code et Codex pour estimer le coût équivalent API par modèle.
 - **Widgets de bureau** : Widgets de bureau macOS natifs en tailles petite, moyenne et grande affichant l'utilisation du compte, les coûts et les statistiques d'activité. Inclut une variante en anneau circulaire pour une surveillance rapide de l'utilisation.
 - **Mode sombre** : Prise en charge complète des modes clair et sombre avec des couleurs adaptatives qui suivent l'apparence de votre système.
 - **Internationalisation** : Disponible en English, 简体中文 (chinois), 日本語 (japonais), Deutsch (allemand) et Français.

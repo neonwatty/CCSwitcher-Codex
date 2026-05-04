@@ -24,7 +24,7 @@ struct SettingsView: View {
                     Label("About", systemImage: "info.circle")
                 }
         }
-        .frame(width: 450, height: 300)
+        .frame(width: 470, height: 340)
         .onAppear {
             launchAtLogin = SMAppService.mainApp.status == .enabled
         }
@@ -83,10 +83,10 @@ struct SettingsView: View {
                 .font(.system(size: 48))
                 .foregroundStyle(.brand)
 
-            Text("CCSwitcher")
+            Text("CCSwitcher Codex")
                 .font(.title2.weight(.bold))
 
-            Text("Claude Code Account Switcher")
+            Text("Claude Code and Codex Monitor")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
@@ -102,18 +102,21 @@ struct SettingsView: View {
 
             Spacer()
 
-            Text("Easily switch between Claude Code accounts and monitor usage.")
+            Text("Monitor Claude Code and Codex accounts, quota windows, activity, and estimated API-equivalent cost.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
 
             VStack(spacing: 2) {
-                Link("More apps at xueshi.dev", destination: URL(string: "https://xueshi.dev")!)
+                Link("Forked from XueshiQiao/CCSwitcher", destination: URL(string: "https://github.com/XueshiQiao/CCSwitcher")!)
                     .font(.caption)
-                Text("© 2026 Xueshi Qiao")
+                Link("CCSwitcher Codex on GitHub", destination: URL(string: "https://github.com/neonwatty/CCSwitcher-Codex")!)
+                    .font(.caption)
+                Text("Independent fork, not affiliated with Anthropic, OpenAI, or upstream CCSwitcher.")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
+                    .multilineTextAlignment(.center)
             }
             .padding(.top, 8)
         }
