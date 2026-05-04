@@ -138,3 +138,16 @@
 /* Promo */
 "%@ - %@ (Weekdays) & Weekends" = "%1$@ - %2$@（平日）& 週末";
 "Double limits: 2 PM - 8 AM ET & Weekends" = "ダブル制限：米国東部時間 午後 2 時〜午前 8 時 & 週末";
+
+/* Fork Branding */
+"CCSwitcher Codex" = "CCSwitcher Codex";
+"Claude Code and Codex Monitor" = "Claude Code / Codex モニター";
+"Monitor Claude Code and Codex accounts, quota windows, activity, and estimated API-equivalent cost." = "Claude Code と Codex のアカウント、クォータ枠、アクティビティ、API 相当コスト見積もりを監視します。";
+"Forked from XueshiQiao/CCSwitcher" = "XueshiQiao/CCSwitcher からのフォーク";
+"CCSwitcher Codex on GitHub" = "GitHub の CCSwitcher Codex";
+"Independent fork, not affiliated with Anthropic, OpenAI, or upstream CCSwitcher." = "Anthropic、OpenAI、上流の CCSwitcher とは提携していない独立フォークです。";
+"Downloading CCSwitcher Codex.dmg..." = "CCSwitcher Codex.dmg をダウンロード中...";
+"The update has been downloaded and opened. Please drag the new CCSwitcher Codex to your Applications folder to replace the old one.\n\nDo you want to quit the current app now?" = "アップデートがダウンロードされ、開かれました。新しい CCSwitcher Codex をアプリケーションフォルダにドラッグして古いバージョンを置き換えてください。\n\n現在のアプリを終了しますか？";
+"Quit CCSwitcher Codex" = "CCSwitcher Codex を終了";
+"A new version of CCSwitcher Codex is available!" = "CCSwitcher Codex の新しいバージョンがあります！";
+"You are running the latest version of CCSwitcher Codex (%@)." = "CCSwitcher Codex の最新バージョン（%@）を実行中です。";

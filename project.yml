@@ -44,7 +44,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: me.local.ccswitcher.codex
         CODE_SIGN_ENTITLEMENTS: CCSwitcher/Resources/CCSwitcher.entitlements
-        PRODUCT_NAME: CCSwitcher
+        PRODUCT_NAME: CCSwitcher Codex
         MARKETING_VERSION: "1.4.4"
         CURRENT_PROJECT_VERSION: "43"
         COMBINE_HIDPI_IMAGES: true
@@ -69,7 +69,7 @@ targets:
     info:
       path: CCSwitcherWidget/Info.plist
       properties:
-        CFBundleDisplayName: CCSwitcher Widget
+        CFBundleDisplayName: CCSwitcher Codex Widget
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         EXAppExtensionAttributes:

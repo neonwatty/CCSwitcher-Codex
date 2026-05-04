@@ -10,9 +10,9 @@ final class UpdateChecker: ObservableObject {
     @Published var latestVersion = ""
     @Published var releaseURL: URL?
 
-    // GitHub repository details
-    private let owner = "XueshiQiao"
-    private let repo = "CCSwitcher"
+    // GitHub repository details for this independent fork.
+    private let owner = "neonwatty"
+    private let repo = "CCSwitcher-Codex"
     
     struct GitHubReleaseAsset: Codable {
         let name: String
@@ -88,7 +88,7 @@ final class UpdateChecker: ObservableObject {
                     self.promptForUpdate(version: latestTag, releaseNotes: release.body ?? "", dmgURL: dmgURL, fallbackURL: release.html_url)
                 } else {
                     if manual {
-                        self.showAlert(title: String(localized: "Up to date", bundle: L10n.bundle), message: String(localized: "You are running the latest version of CCSwitcher (\(currentVersion)).", bundle: L10n.bundle))
+                        self.showAlert(title: String(localized: "Up to date", bundle: L10n.bundle), message: String(localized: "You are running the latest version of CCSwitcher Codex (\(currentVersion)).", bundle: L10n.bundle))
                     }
                 }
             } catch {
@@ -116,7 +116,7 @@ final class UpdateChecker: ObservableObject {
     
     private func promptForUpdate(version: String, releaseNotes: String, dmgURL: URL?, fallbackURL: String) {
         let alert = NSAlert()
-        alert.messageText = String(localized: "A new version of CCSwitcher is available!", bundle: L10n.bundle)
+        alert.messageText = String(localized: "A new version of CCSwitcher Codex is available!", bundle: L10n.bundle)
         let currentVer = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
         alert.informativeText = String(localized: "Version \(version) is available. You are currently running version \(currentVer).\n\nWould you like to download it now?", bundle: L10n.bundle)
         alert.alertStyle = .informational
@@ -158,7 +158,7 @@ final class UpdateChecker: ObservableObject {
         stack.spacing = 15
         stack.edgeInsets = NSEdgeInsets(top: 20, left: 20, bottom: 20, right: 20)
         
-        let label = NSTextField(labelWithString: String(localized: "Downloading CCSwitcher.dmg...", bundle: L10n.bundle))
+        let label = NSTextField(labelWithString: String(localized: "Downloading CCSwitcher Codex.dmg...", bundle: L10n.bundle))
         label.font = .systemFont(ofSize: 13, weight: .medium)
         
         let indicator = NSProgressIndicator()
@@ -181,7 +181,7 @@ final class UpdateChecker: ObservableObject {
             // Move temp file to Downloads folder
             let fileManager = FileManager.default
             let downloadsDir = fileManager.urls(for: .downloadsDirectory, in: .userDomainMask).first!
-            let destinationURL = downloadsDir.appendingPathComponent("CCSwitcher_Update.dmg")
+            let destinationURL = downloadsDir.appendingPathComponent("CCSwitcher_Codex_Update.dmg")
             
             if fileManager.fileExists(atPath: destinationURL.path) {
                 try fileManager.removeItem(at: destinationURL)
@@ -196,8 +196,8 @@ final class UpdateChecker: ObservableObject {
             // Prompt the user to quit so they can drag the new app to Applications
             let successAlert = NSAlert()
             successAlert.messageText = String(localized: "Download Complete", bundle: L10n.bundle)
-            successAlert.informativeText = String(localized: "The update has been downloaded and opened. Please drag the new CCSwitcher to your Applications folder to replace the old one.\n\nDo you want to quit the current app now?", bundle: L10n.bundle)
-            successAlert.addButton(withTitle: String(localized: "Quit CCSwitcher", bundle: L10n.bundle))
+            successAlert.informativeText = String(localized: "The update has been downloaded and opened. Please drag the new CCSwitcher Codex to your Applications folder to replace the old one.\n\nDo you want to quit the current app now?", bundle: L10n.bundle)
+            successAlert.addButton(withTitle: String(localized: "Quit CCSwitcher Codex", bundle: L10n.bundle))
             successAlert.addButton(withTitle: String(localized: "Later", bundle: L10n.bundle))
             
             if successAlert.runModal() == .alertFirstButtonReturn {

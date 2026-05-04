@@ -1,8 +1,9 @@
-# CCSwitcher Codex Private Fork Notes
+# CCSwitcher Codex Fork Notes
 
-This branch is a private/local Codex experiment. It intentionally uses local bundle
-identifiers and Keychain service names so it does not replace the installed
-`/Applications/CCSwitcher.app`.
+This fork adds Codex account and usage monitoring on top of the original
+Claude Code-focused CCSwitcher app. It intentionally uses local bundle
+identifiers and Keychain service names so it can coexist with an installed
+upstream `/Applications/CCSwitcher.app`.
 
 ## What Works
 
@@ -29,7 +30,7 @@ xcodebuild -project CCSwitcher.xcodeproj -scheme CCSwitcher -configuration Debug
 The local copy created during development is:
 
 ```text
-/Users/neonwatty/Desktop/CCSwitcher-Codex.app
+/Applications/CCSwitcher Codex.app
 ```
 
 ## Known Limits
@@ -39,5 +40,5 @@ The local copy created during development is:
   machine because only one Codex account was available during this pass.
 - Codex line-count/tool-use parsing is not implemented yet. Codex turns,
   active time, model usage, token usage, and API-equivalent cost are included.
-- The upstream repo appears to have no explicit license metadata, so keep this
-  private/local unless that is resolved.
+- The upstream repo appears to have no explicit license metadata. Keep that in
+  mind before publishing binaries or redistributing modified source.
