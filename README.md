@@ -10,6 +10,8 @@
 
 CCSwitcher Codex is a macOS menu bar app for monitoring Claude Code and OpenAI Codex side by side. It tracks active accounts, quota windows, local activity, and API-equivalent cost estimates for both tools from one lightweight SwiftUI app.
 
+Website: [neonwatty.github.io/CCSwitcher-Codex](https://neonwatty.github.io/CCSwitcher-Codex/)
+
 This is a fork of [XueshiQiao/CCSwitcher](https://github.com/XueshiQiao/CCSwitcher), which focuses on Claude Code account switching. Codex support was proposed upstream in [issue #12](https://github.com/XueshiQiao/CCSwitcher/issues/12) and was declined as outside that project’s current direction, so this fork keeps the dual-provider functionality separate.
 
 This fork uses its own bundle identifier and app group (`me.local.ccswitcher.codex` / `group.me.local.ccswitcher.codex`) so it can be installed and tested separately from the upstream CCSwitcher app.
@@ -74,19 +76,23 @@ open "/Applications/CCSwitcher Codex.app"
 ## Screenshots
 
 <p align="center">
-  <img src="assets/CCSwitcher-light.png" alt="CCSwitcher — Light Theme" width="900" /><br/>
-  <em>Light Theme</em>
+  <img src="docs/assets/issue-usage.png" alt="CCSwitcher Codex — Usage dashboard" width="342" /><br/>
+  <em>Claude Code and Codex usage dashboard</em>
 </p>
 
 <p align="center">
-  <img src="assets/CCSwitcher-dark.png" alt="CCSwitcher — Dark Theme" width="900" /><br/>
-  <em>Dark Theme</em>
+  <img src="docs/assets/issue-accounts.png" alt="CCSwitcher Codex — Accounts dashboard" width="357" /><br/>
+  <em>Claude Code and Codex accounts</em>
 </p>
 
 <p align="center">
   <img src="assets/CCSwitcher-widgets.png" alt="CCSwitcher — Desktop Widget" width="900" /><br/>
   <em>Desktop Widget</em>
 </p>
+
+## License
+
+The upstream [XueshiQiao/CCSwitcher](https://github.com/XueshiQiao/CCSwitcher) repository does not currently publish an explicit open-source license. Until that is resolved, treat this fork as source-available for inspection and local experimentation rather than freely redistributable open-source software.
 
 ## Demo
 
