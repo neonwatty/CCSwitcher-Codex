@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CCSwitcher Codex</title>
+    <meta
+      name="description"
+      content="A macOS menu bar app for monitoring Claude Code and OpenAI Codex accounts, quota windows, activity, and API-equivalent costs."
+    >
+    <meta property="og:title" content="CCSwitcher Codex">
+    <meta
+      property="og:description"
+      content="Monitor Claude Code and OpenAI Codex from one lightweight macOS menu bar app."
+    >
+    <meta property="og:image" content="assets/ccswitcher-codex-light.png">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="CCSwitcher Codex home">
+        <span class="brand-mark" aria-hidden="true">CC</span>
+        <span>CCSwitcher Codex</span>
+      </a>
+      <nav class="site-nav" aria-label="Primary navigation">
+        <a href="#features">Features</a>
+        <a href="#codex">Codex Support</a>
+        <a href="https://github.com/neonwatty/CCSwitcher-Codex">GitHub</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <h1 id="hero-title">Monitor Claude Code and Codex from your menu bar.</h1>
+          <p>
+            CCSwitcher Codex tracks active accounts, quota windows, local activity,
+            and API-equivalent cost estimates for Claude Code and OpenAI Codex in
+            one native macOS utility.
+          </p>
+          <div class="hero-actions" aria-label="Primary actions">
+            <a class="button primary" href="https://github.com/neonwatty/CCSwitcher-Codex">
+              View on GitHub
+            </a>
+            <a class="button secondary" href="https://github.com/neonwatty/CCSwitcher-Codex#readme">
+              Read the docs
+            </a>
+          </div>
+        </div>
+
+        <figure class="hero-media">
+          <img
+            src="assets/ccswitcher-codex-light.png"
+            alt="CCSwitcher Codex macOS menu bar dashboard showing Claude Code and Codex usage"
+            width="3200"
+            height="2400"
+          >
+        </figure>
+      </section>
+
+      <section id="features" class="feature-band" aria-label="Key features">
+        <article>
+          <h2>Dual-provider dashboard</h2>
+          <p>View Claude Code and Codex together, or filter down to one provider.</p>
+        </article>
+        <article>
+          <h2>Codex quota monitoring</h2>
+          <p>Reads Codex CLI auth state and checks active quota windows.</p>
+        </article>
+        <article>
+          <h2>Local cost estimates</h2>
+          <p>Parses local logs for API-equivalent token and model cost estimates.</p>
+        </article>
+        <article>
+          <h2>Native macOS widgets</h2>
+          <p>Includes desktop widgets for usage, cost, and activity at a glance.</p>
+        </article>
+      </section>
+
+      <section id="codex" class="codex-section" aria-labelledby="codex-title">
+        <div>
+          <h2 id="codex-title">A focused fork for Codex users.</h2>
+          <p>
+            This project builds on the original CCSwitcher Claude Code workflows
+            and keeps Codex monitoring separate as an independent fork.
+          </p>
+        </div>
+        <a class="text-link" href="https://github.com/XueshiQiao/CCSwitcher/issues/12">
+          Read the upstream discussion
+        </a>
+      </section>
+    </main>
+  </body>
+</html>
