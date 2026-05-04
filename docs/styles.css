@@ -140,26 +140,43 @@ a {
 .hero-media {
   position: relative;
   margin: 0;
+  min-height: 610px;
 }
 
 .hero-media::before {
   position: absolute;
-  inset: -22px;
+  top: 64px;
+  right: 16px;
+  bottom: 48px;
+  left: 78px;
   z-index: -1;
-  border-radius: 18px;
+  border-radius: 24px;
   background:
     linear-gradient(135deg, rgba(36, 93, 255, 0.16), rgba(233, 120, 47, 0.16)),
     var(--surface);
   content: "";
 }
 
-.hero-media img {
+.screenshot {
+  position: absolute;
   display: block;
-  width: 100%;
+  width: min(48%, 342px);
   height: auto;
-  border: 1px solid rgba(17, 19, 24, 0.08);
-  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
   box-shadow: var(--shadow);
+}
+
+.screenshot-usage {
+  top: 56px;
+  right: 44px;
+  z-index: 2;
+}
+
+.screenshot-accounts {
+  top: 0;
+  left: 24px;
+  z-index: 1;
 }
 
 .feature-band {
@@ -245,6 +262,26 @@ a {
 
   .hero-media {
     width: min(100%, 720px);
+    min-height: 560px;
+  }
+
+  .hero-media::before {
+    top: 58px;
+    right: 12px;
+    bottom: 34px;
+    left: 42px;
+  }
+
+  .screenshot {
+    width: min(49%, 300px);
+  }
+
+  .screenshot-usage {
+    right: 16px;
+  }
+
+  .screenshot-accounts {
+    left: 10px;
   }
 
   .feature-band {
@@ -287,9 +324,30 @@ a {
     width: 100%;
   }
 
+  .hero-media {
+    min-height: 420px;
+  }
+
   .hero-media::before {
-    inset: -10px;
+    top: 44px;
+    right: 0;
+    bottom: 28px;
+    left: 30px;
     border-radius: 14px;
+  }
+
+  .screenshot {
+    width: 52%;
+  }
+
+  .screenshot-usage {
+    top: 42px;
+    right: 8px;
+  }
+
+  .screenshot-accounts {
+    top: 0;
+    left: 0;
   }
 
   .feature-band {
